@@ -1,0 +1,255 @@
+<div class="card">
+  <h2 id="tituloFormularioProducto">Nuevo producto</h2>
+
+  <input type="hidden" id="productoIdEnEdicion" value="">
+
+  <div class="campo">
+    <label for="prodCodigo">Código de producto</label>
+    <input type="text" id="prodCodigo" placeholder="Ej. P-001">
+  </div>
+
+  <div class="campo">
+    <label for="prodNombre">Nombre del producto</label>
+    <input type="text" id="prodNombre" placeholder="Ej. Camisa polo talla M">
+  </div>
+
+  <div class="campo">
+    <label for="prodDescripcion">Descripción</label>
+    <textarea id="prodDescripcion" rows="2" placeholder="Opcional"></textarea>
+  </div>
+
+  <div class="campo">
+    <label for="prodUnidad">Unidad de medida</label>
+    <select id="prodUnidad">
+      <option value="Unidad">Unidad</option>
+      <option value="Caja">Caja</option>
+      <option value="Paquete">Paquete</option>
+      <option value="Par">Par</option>
+    </select>
+  </div>
+
+  <div style="display:flex; gap:12px;">
+    <div class="campo" style="flex:1;">
+      <label for="prodPrecioCosto">Precio de costo</label>
+      <input type="number" id="prodPrecioCosto" min="0" step="0.01" placeholder="0.00">
+    </div>
+    <div class="campo" style="flex:1;">
+      <label for="prodPrecioVenta">Precio de venta</label>
+      <input type="number" id="prodPrecioVenta" min="0" step="0.01" placeholder="0.00">
+    </div>
+  </div>
+
+  <div style="display:flex; gap:10px;">
+    <button class="boton boton-primario" id="btnGuardarProducto" onclick="guardarProducto_()">
+      Guardar producto
+    </button>
+    <button class="boton boton-fantasma oculto" id="btnCancelarEdicionProducto" style="width:auto; padding:12px 18px;" onclick="cancelarEdicionProducto_()">
+      Cancelar
+    </button>
+  </div>
+</div>
+
+
+
+<div class="card">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+    <h2 style="margin:0;">Catálogo de productos</h2>
+    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:400; margin:0;">
+      <input type="checkbox" id="checkVerInactivos" onchange="cargarProductos_()" style="width:auto;">
+      Ver inactivos
+    </label>
+  </div>
+  <div id="tablaProductos">
+    <p style="font-size:13px; color:var(--color-base-suave);">Cargando...</p>
+  </div>
+</div>
+
+<script>
+  var productosCache_ = [];
+
+function cargarProductos_() {
+    var verInactivos = document.getElementById('checkVerInactivos').checked;
+    console.log('>>> checkVerInactivos leído:', verInactivos);
+
+    var contenedor = document.getElementById('tablaProductos');
+    contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-base-suave);">Cargando...</p>';
+
+    var llamada = google.script.run
+      .withSuccessHandler(function (productos) {
+        console.log('>>> Respuesta exitosa:', productos);
+        productosCache_ = productos || [];
+        poblarTablaProductos_(productosCache_, verInactivos);
+      })
+      .withFailureHandler(function (error) {
+        console.log('>>> ERROR:', error);
+        contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-alerta);">Error al cargar: ' + error.message + '</p>';
+      });
+
+    if (verInactivos) {
+      llamada.apiListarTodosLosProductos();
+    } else {
+      llamada.apiListarProductosActivos();
+    }
+  }
+
+  function poblarTablaProductos_(productos, mostrandoInactivos) {
+    var contenedor = document.getElementById('tablaProductos');
+
+    if (productos.length === 0) {
+      contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-base-suave);">No hay productos registrados.</p>';
+      return;
+    }
+
+    var html = '<table><thead><tr><th>Código</th><th>Producto</th><th>Stock</th><th>P. Venta</th><th></th></tr></thead><tbody>';
+
+    productos.forEach(function (p) {
+      var insigniaEstado = p.activo
+        ? ''
+        : '<span class="insignia insignia-alerta" style="margin-left:6px;">Inactivo</span>';
+
+      var insigniaStock = Number(p.stock_total) <= 5
+        ? '<span class="insignia insignia-alerta">' + p.stock_total + '</span>'
+        : '<span class="insignia insignia-exito">' + p.stock_total + '</span>';
+
+      var botonToggle = p.activo
+        ? '<button class="boton boton-fantasma" style="width:auto; padding:6px 10px; font-size:12px;" onclick="confirmarDesactivarProducto_(' + p.id_producto + ')">Desactivar</button>'
+        : '<button class="boton boton-secundario" style="width:auto; padding:6px 10px; font-size:12px;" onclick="reactivarProducto_(' + p.id_producto + ')">Reactivar</button>';
+
+      html += '<tr>' +
+        '<td>' + p.codigo_producto + '</td>' +
+        '<td>' + p.nombre_producto + insigniaEstado + '</td>' +
+        '<td>' + insigniaStock + '</td>' +
+        '<td>$' + Number(p.precio_venta).toFixed(2) + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<button class="boton boton-fantasma" style="width:auto; padding:6px 10px; font-size:12px; margin-right:4px;" onclick="editarProductoDesdeTabla_(' + p.id_producto + ')">Editar</button>' +
+          botonToggle +
+        '</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+    contenedor.innerHTML = html;
+  }
+
+  function guardarProducto_() {
+    var idEnEdicion = document.getElementById('productoIdEnEdicion').value;
+
+    var datos = {
+      codigo_producto: document.getElementById('prodCodigo').value.trim(),
+      nombre_producto: document.getElementById('prodNombre').value.trim(),
+      descripcion: document.getElementById('prodDescripcion').value.trim(),
+      unidad_medida: document.getElementById('prodUnidad').value,
+      precio_costo: document.getElementById('prodPrecioCosto').value,
+      precio_venta: document.getElementById('prodPrecioVenta').value
+    };
+
+    if (!datos.codigo_producto || !datos.nombre_producto || !datos.precio_costo || !datos.precio_venta) {
+      mostrarMensajeGlobal_('error', 'Completa código, nombre y ambos precios.');
+      return;
+    }
+
+    var boton = document.getElementById('btnGuardarProducto');
+    boton.disabled = true;
+    boton.textContent = 'Guardando...';
+
+    var alTerminar = function () {
+      boton.disabled = false;
+      boton.textContent = 'Guardar producto';
+    };
+
+    if (idEnEdicion) {
+      google.script.run
+        .withSuccessHandler(function () {
+          mostrarMensajeGlobal_('exito', 'Producto actualizado correctamente.');
+          cancelarEdicionProducto_();
+          cargarProductos_();
+          alTerminar();
+        })
+        .withFailureHandler(function (error) {
+          mostrarMensajeGlobal_('error', error.message);
+          alTerminar();
+        })
+        .apiEditarProducto(Number(idEnEdicion), datos);
+    } else {
+      google.script.run
+        .withSuccessHandler(function () {
+          mostrarMensajeGlobal_('exito', 'Producto creado correctamente.');
+          limpiarFormularioProducto_();
+          cargarProductos_();
+          alTerminar();
+        })
+        .withFailureHandler(function (error) {
+          mostrarMensajeGlobal_('error', error.message);
+          alTerminar();
+        })
+        .apiCrearProducto(datos);
+    }
+  }
+
+  function editarProductoDesdeTabla_(idProducto) {
+    var producto = productosCache_.filter(function (p) { return p.id_producto === idProducto; })[0];
+    if (!producto) return;
+
+    document.getElementById('productoIdEnEdicion').value = producto.id_producto;
+    document.getElementById('prodCodigo').value = producto.codigo_producto;
+    document.getElementById('prodNombre').value = producto.nombre_producto;
+    document.getElementById('prodDescripcion').value = producto.descripcion || '';
+    document.getElementById('prodUnidad').value = producto.unidad_medida || 'Unidad';
+    document.getElementById('prodPrecioCosto').value = producto.precio_costo;
+    document.getElementById('prodPrecioVenta').value = producto.precio_venta;
+
+    document.getElementById('tituloFormularioProducto').textContent = 'Editar producto';
+    document.getElementById('btnCancelarEdicionProducto').classList.remove('oculto');
+
+    document.getElementById('prodCodigo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function cancelarEdicionProducto_() {
+    limpiarFormularioProducto_();
+  }
+
+  function limpiarFormularioProducto_() {
+    document.getElementById('productoIdEnEdicion').value = '';
+    document.getElementById('prodCodigo').value = '';
+    document.getElementById('prodNombre').value = '';
+    document.getElementById('prodDescripcion').value = '';
+    document.getElementById('prodUnidad').value = 'Unidad';
+    document.getElementById('prodPrecioCosto').value = '';
+    document.getElementById('prodPrecioVenta').value = '';
+    document.getElementById('tituloFormularioProducto').textContent = 'Nuevo producto';
+    document.getElementById('btnCancelarEdicionProducto').classList.add('oculto');
+  }
+
+  function confirmarDesactivarProducto_(idProducto) {
+    var producto = productosCache_.filter(function (p) { return p.id_producto === idProducto; })[0];
+    var nombre = producto ? producto.nombre_producto : 'este producto';
+
+    if (!window.confirm('¿Desactivar "' + nombre + '"? No se eliminará su historial, pero dejará de aparecer en los selectores.')) {
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Producto desactivado.');
+        cargarProductos_();
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', error.message);
+      })
+      .apiDesactivarProducto(idProducto);
+  }
+
+  function reactivarProducto_(idProducto) {
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Producto reactivado.');
+        cargarProductos_();
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', error.message);
+      })
+      .apiReactivarProducto(idProducto);
+  }
+
+
+</script>

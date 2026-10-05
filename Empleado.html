@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= HtmlService.createHtmlOutputFromFile('Estilos').getContent(); ?>
+  <style>
+    /* ── Header ───────────────────────────────────────────────── */
+    .header {
+      background: var(--color-primario);
+      color: #fff;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .header-titulo { font-size: 18px; font-weight: 700; margin: 0; }
+    .header-sub    { font-size: 13px; opacity: .8; margin: 2px 0 0; }
+    .btn-salir {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.5);
+      color: #fff;
+      border-radius: var(--radio-md);
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .btn-salir:hover { background: rgba(255,255,255,.15); }
+
+    /* ── Info de stock disponible ─────────────────────────────── */
+    .stock-info {
+      background: var(--color-primario-claro);
+      border: 1px solid var(--color-primario);
+      border-radius: var(--radio-md);
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--color-primario-oscuro);
+      margin-bottom: 14px;
+      display: none;
+    }
+    .stock-info.visible { display: block; }
+
+    /* ── Carrito ──────────────────────────────────────────────── */
+    .carrito-vacio {
+      text-align: center;
+      padding: 20px;
+      color: var(--color-base-suave);
+      font-size: 13px;
+      font-style: italic;
+    }
+
+    .carrito-tabla {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 0;
+    }
+    .carrito-tabla th {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--color-base-suave);
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--color-borde);
+      text-align: left;
+    }
+    .carrito-tabla td {
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--color-borde);
+      vertical-align: middle;
+    }
+    .carrito-tabla tr:last-child td { border-bottom: none; }
+
+    /* ── Controles +/- cantidad ───────────────────────────────── */
+    .ctrl-cantidad {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      border: 1px solid var(--color-borde);
+      border-radius: var(--radio-md);
+      overflow: hidden;
+    }
+    .ctrl-btn {
+      width: 30px;
+      height: 30px;
+      background: var(--color-superficie);
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-primario-oscuro);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+      transition: background .12s;
+    }
+    .ctrl-btn:hover { background: var(--color-primario-claro); }
+    .ctrl-btn.minus:hover { background: var(--color-alerta-claro); color: var(--color-alerta); }
+    .ctrl-num {
+      width: 36px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-primario-oscuro);
+      border-left: 1px solid var(--color-borde);
+      border-right: 1px solid var(--color-borde);
+      padding: 0 4px;
+      line-height: 30px;
+    }
+
+    /* ── Subtotal por fila ────────────────────────────────────── */
+    .fila-subtotal {
+      text-align: right;
+      font-weight: 600;
+      color: var(--color-primario-oscuro);
+      white-space: nowrap;
+    }
+
+    /* ── Botón eliminar fila ──────────────────────────────────── */
+    .btn-quitar {
+      background: none;
+      border: none;
+      color: var(--color-alerta);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px 6px;
+      border-radius: var(--radio-md);
+      font-family: inherit;
+    }
+    .btn-quitar:hover { background: var(--color-alerta-claro); }
+
+    /* ── Total del carrito ────────────────────────────────────── */
+    .carrito-footer {
+      border-top: 2px solid var(--color-borde);
+      padding: 14px 10px 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .carrito-total-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--color-base-suave);
+    }
+    .carrito-total-valor {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-primario-oscuro);
+    }
+
+    /* ── Resumen ventas del día ───────────────────────────────── */
+    .resumen-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--color-borde);
+      font-size: 13px;
+    }
+    .resumen-item:last-child { border-bottom: none; }
+    .resumen-nombre { color: var(--color-base-suave); }
+    .resumen-cant {
+      background: var(--color-exito-claro);
+      color: var(--color-exito);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 2px 9px;
+      border-radius: 999px;
+    }
+    .resumen-monto {
+      font-weight: 600;
+      color: var(--color-primario-oscuro);
+      min-width: 60px;
+      text-align: right;
+    }
+
+    /* ── Mi stock disponible ──────────────────────────────────── */
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .stock-badge.ok   { background: var(--color-exito-claro);  color: var(--color-exito); }
+    .stock-badge.bajo { background: var(--color-alerta-claro); color: var(--color-alerta); }
+
+    .seccion-titulo {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--color-base-suave);
+      margin: 0 0 12px;
+    }
+
+    .estado-vacio {
+      text-align: center;
+      padding: 20px;
+      color: var(--color-base-suave);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <p class="header-titulo">Registro de Ventas</p>
+      <p class="header-sub"><?= nombreEmpleado ?></p>
+    </div>
+    <button class="btn-salir" onclick="window.top.location.href = URL_BASE + '?vista=login'">Salir</button>
+  </div>
+
+  <div class="contenedor">
+
+    <!-- ── SECCIÓN 1: AGREGAR AL CARRITO ── -->
+    <div class="card">
+      <p class="seccion-titulo">&#43; Agregar producto</p>
+
+      <div class="campo">
+        <label>Producto</label>
+        <select id="sel-producto" onchange="onProductoChange()">
+          <option value="">Selecciona un producto...</option>
+        </select>
+      </div>
+
+      <div class="stock-info" id="stock-info"></div>
+
+      <div class="campo" id="campo-cantidad" style="display:none;">
+        <label>Cantidad</label>
+        <input type="number" id="inp-cantidad" min="1" value="1" placeholder="Ej. 2">
+      </div>
+
+      <button class="boton boton-primario" id="btn-agregar" onclick="agregarAlCarrito()" style="display:none;">
+        &#43; Agregar al carrito
+      </button>
+    </div>
+
+    <!-- ── SECCIÓN 2: CARRITO ── -->
+    <div class="card">
+      <p class="seccion-titulo">&#128722; Carrito de venta</p>
+
+      <div id="carrito-contenido">
+        <div class="carrito-vacio">Aún no has agregado productos.</div>
+      </div>
+
+      <div id="carrito-footer" style="display:none;">
+        <div class="carrito-footer">
+          <span class="carrito-total-label">Total</span>
+          <span class="carrito-total-valor" id="carrito-total">$0.00</span>
+        </div>
+        <button class="boton boton-primario" style="width:100%;margin-top:12px;" onclick="confirmarOrden()" id="btn-confirmar">
+          &#10003; Confirmar venta
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN 3: RESUMEN DEL DÍA ── -->
+    <div class="card">
+      <p class="seccion-titulo">&#128203; Ventas del día</p>
+      <div id="resumen-dia"><div class="estado-vacio">Cargando...</div></div>
+    </div>
+
+    <!-- ── SECCIÓN 4: MI STOCK DISPONIBLE ── -->
+    <div class="card">
+      <p class="seccion-titulo">&#128230; Mi stock disponible</p>
+      <div id="stock-disponible"><div class="estado-vacio">Cargando...</div></div>
+    </div>
+
+  </div><!-- /contenedor -->
+
+<script>
+  var ID_EMPLEADO   = <?= idEmpleado ?>;
+  var URL_BASE      = '<?= urlBase ?>';
+
+  /* ── Estado del carrito ─────────────────────────────────────────────
+     carrito = { id_producto: { nombre, precio, stock, cantidad } }
+  ────────────────────────────────────────────────────────────────── */
+  var carrito       = {};
+  var stockCache    = [];  // copia de listarStockDeEmpleado para validar
+
+  /* ── Inicialización ──────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', function () {
+    cargarStock();
+  });
+
+  function cargarStock() {
+    google.script.run
+      .withSuccessHandler(function (stock) {
+        stockCache = stock || [];
+        poblarSelectProductos(stock);
+        renderStockDisponible(stock);
+        cargarResumenDia();
+      })
+      .withFailureHandler(function (err) {
+        console.error('Error cargando stock:', err);
+        document.getElementById('stock-disponible').innerHTML =
+          '<div class="estado-vacio" style="color:var(--color-alerta);">Error al cargar stock.</div>';
+      })
+      .apiListarStockDeEmpleado(ID_EMPLEADO);
+  }
+
+  function cargarResumenDia() {
+    google.script.run
+      .withSuccessHandler(function (ventas) {
+        renderResumenDia(ventas);
+      })
+      .withFailureHandler(function () {
+        document.getElementById('resumen-dia').innerHTML =
+          '<div class="estado-vacio">No se pudo cargar el resumen.</div>';
+      })
+      .apiListarVentasDeEmpleado(ID_EMPLEADO, fechaHoy(), fechaHoy());
+  }
+
+  /* ── Poblar select de productos ──────────────────────────────────── */
+  function poblarSelectProductos(stock) {
+    var sel = document.getElementById('sel-producto');
+    sel.innerHTML = '<option value="">Selecciona un producto...</option>';
+    (stock || []).forEach(function (item) {
+      if (item.cantidad_disponible <= 0) return;
+      var opt = document.createElement('option');
+      opt.value       = item.id_producto;
+      opt.textContent = item.nombre_producto;
+      opt.dataset.precio = item.precio_venta;
+      opt.dataset.stock  = item.cantidad_disponible;
+      sel.appendChild(opt);
+    });
+  }
+
+  /* ── Cambio de producto seleccionado ─────────────────────────────── */
+  function onProductoChange() {
+    var sel     = document.getElementById('sel-producto');
+    var infoEl  = document.getElementById('stock-info');
+    var campoQ  = document.getElementById('campo-cantidad');
+    var btnAg   = document.getElementById('btn-agregar');
+    var inp     = document.getElementById('inp-cantidad');
+
+    if (!sel.value) {
+      infoEl.className = 'stock-info';
+      campoQ.style.display = 'none';
+      btnAg.style.display  = 'none';
+      return;
+    }
+
+    var opt      = sel.options[sel.selectedIndex];
+    var precio   = Number(opt.dataset.precio);
+    var stockMax = stockDisponibleReal(sel.value);
+
+    infoEl.className = 'stock-info visible';
+    infoEl.innerHTML = 'Tienes <strong>' + stockMax + '</strong> unidades disponibles &middot; precio de venta: <strong>$' + fmt(precio) + '</strong>';
+
+    inp.max   = stockMax;
+    inp.value = 1;
+    campoQ.style.display = 'block';
+    btnAg.style.display  = 'block';
+  }
+
+  /* ── Devuelve el stock real restando lo que ya está en el carrito ── */
+  function stockDisponibleReal(idProducto) {
+    var enCache = stockCache.find(function (s) { return String(s.id_producto) === String(idProducto); });
+    var stockTotal = enCache ? Number(enCache.cantidad_disponible) : 0;
+    var enCarrito  = carrito[idProducto] ? carrito[idProducto].cantidad : 0;
+    return stockTotal - enCarrito;
+  }
+
+  /* ── Agregar al carrito ───────────────────────────────────────────── */
+  function agregarAlCarrito() {
+    var sel      = document.getElementById('sel-producto');
+    var inp      = document.getElementById('inp-cantidad');
+    var idProd   = sel.value;
+    var cantidad = parseInt(inp.value, 10);
+
+    if (!idProd) { alert('Selecciona un producto.'); return; }
+    if (isNaN(cantidad) || cantidad < 1) { alert('La cantidad debe ser al menos 1.'); return; }
+
+    var opt    = sel.options[sel.selectedIndex];
+    var precio = Number(opt.dataset.precio);
+    var nombre = opt.textContent;
+
+    var disponibleReal = stockDisponibleReal(idProd);
+
+    // Si ya está en carrito, sumar
+    if (carrito[idProd]) {
+      var nuevaCantidad = carrito[idProd].cantidad + cantidad;
+      if (nuevaCantidad > carrito[idProd].stock) {
+        alert('No puedes agregar ' + cantidad + ' más. Solo tienes ' + disponibleReal + ' unidades disponibles.');
+        return;
+      }
+      carrito[idProd].cantidad = nuevaCantidad;
+    } else {
+      if (cantidad > disponibleReal) {
+        alert('Solo tienes ' + disponibleReal + ' unidades disponibles.');
+        return;
+      }
+      carrito[idProd] = {
+        id_producto: idProd,
+        nombre:      nombre,
+        precio:      precio,
+        stock:       Number(opt.dataset.stock),
+        cantidad:    cantidad
+      };
+    }
+
+    renderCarrito();
+
+    // Resetear selector
+    sel.value = '';
+    onProductoChange();
+  }
+
+  /* ── Cambiar cantidad desde los botones +/- del carrito ─────────── */
+  function cambiarCantidad(idProducto, delta) {
+    if (!carrito[idProducto]) return;
+
+    var nueva = carrito[idProducto].cantidad + delta;
+
+    if (nueva <= 0) {
+      delete carrito[idProducto];
+      renderCarrito();
+      return;
+    }
+
+    if (nueva > carrito[idProducto].stock) {
+      alert('No hay más stock disponible para este producto.');
+      return;
+    }
+
+    carrito[idProducto].cantidad = nueva;
+    renderCarrito();
+  }
+
+  /* ── Quitar producto del carrito ─────────────────────────────────── */
+  function quitarDelCarrito(idProducto) {
+    delete carrito[idProducto];
+    renderCarrito();
+  }
+
+  /* ── Render del carrito ──────────────────────────────────────────── */
+  function renderCarrito() {
+    var keys   = Object.keys(carrito);
+    var contEl = document.getElementById('carrito-contenido');
+    var footEl = document.getElementById('carrito-footer');
+
+    if (keys.length === 0) {
+      contEl.innerHTML = '<div class="carrito-vacio">Aún no has agregado productos.</div>';
+      footEl.style.display = 'none';
+      return;
+    }
+
+    var total = 0;
+    var filas = keys.map(function (id) {
+      var item      = carrito[id];
+      var subtotal  = item.precio * item.cantidad;
+      total        += subtotal;
+      return '<tr>' +
+        '<td>' + esc(item.nombre) + '</td>' +
+        '<td style="text-align:center;">' +
+          '<div class="ctrl-cantidad">' +
+            '<button class="ctrl-btn minus" onclick="cambiarCantidad(\'' + id + '\', -1)" title="Restar">&#8722;</button>' +
+            '<span class="ctrl-num">' + item.cantidad + '</span>' +
+            '<button class="ctrl-btn plus" onclick="cambiarCantidad(\'' + id + '\', 1)" title="Sumar">&#43;</button>' +
+          '</div>' +
+        '</td>' +
+        '<td style="text-align:right;font-size:12px;color:var(--color-base-suave);">$' + fmt(item.precio) + '</td>' +
+        '<td class="fila-subtotal">$' + fmt(subtotal) + '</td>' +
+        '<td style="text-align:center;">' +
+          '<button class="btn-quitar" onclick="quitarDelCarrito(\'' + id + '\')" title="Quitar">&#10005;</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+
+    contEl.innerHTML =
+      '<div style="overflow-x:auto;">' +
+      '<table class="carrito-tabla">' +
+      '<thead><tr>' +
+        '<th>Producto</th>' +
+        '<th style="text-align:center;">Cantidad</th>' +
+        '<th style="text-align:right;">P. unit.</th>' +
+        '<th style="text-align:right;">Subtotal</th>' +
+        '<th></th>' +
+      '</tr></thead>' +
+      '<tbody>' + filas + '</tbody>' +
+      '</table></div>';
+
+    document.getElementById('carrito-total').textContent = '$' + fmt(total);
+    footEl.style.display = 'block';
+  }
+
+  /* ── Confirmar orden de venta ────────────────────────────────────── */
+  function confirmarOrden() {
+    var keys = Object.keys(carrito);
+    if (keys.length === 0) { alert('El carrito está vacío.'); return; }
+
+    var lineas = keys.map(function (id) {
+      var item = carrito[id];
+      return {
+        id_producto:           item.id_producto,
+        cantidad_vendida:      item.cantidad,
+        precio_venta_aplicado: item.precio
+      };
+    });
+
+    var btnConfirmar = document.getElementById('btn-confirmar');
+    btnConfirmar.disabled    = true;
+    btnConfirmar.textContent = 'Registrando...';
+
+    google.script.run
+      .withSuccessHandler(function (resultado) {
+        // Limpiar carrito
+        carrito = {};
+        renderCarrito();
+        btnConfirmar.disabled    = false;
+        btnConfirmar.textContent = '✓ Confirmar venta';
+
+        // Recargar stock y resumen
+        cargarStock();
+
+        mostrarMensaje('Venta registrada correctamente. Orden ' + resultado.id_orden +
+          ' · ' + resultado.lineas.length + ' producto(s).', 'exito');
+      })
+      .withFailureHandler(function (err) {
+        btnConfirmar.disabled    = false;
+        btnConfirmar.textContent = '✓ Confirmar venta';
+        mostrarMensaje('Error al registrar: ' + err.message, 'error');
+      })
+      .apiRegistrarOrdenVenta(ID_EMPLEADO, lineas);
+  }
+
+  /* ── Render resumen del día ──────────────────────────────────────── */
+  function renderResumenDia(ventas) {
+    var el = document.getElementById('resumen-dia');
+    if (!ventas || ventas.length === 0) {
+      el.innerHTML = '<div class="estado-vacio">Sin ventas registradas hoy.</div>';
+      return;
+    }
+
+    // Agrupar por orden para mostrar cuántas órdenes hubo
+    var porOrden = {};
+    ventas.forEach(function (v) {
+      var orden = v.id_orden || v.id_venta;
+      if (!porOrden[orden]) porOrden[orden] = [];
+      porOrden[orden].push(v);
+    });
+
+    var totalDia = 0;
+    var filas = ventas.map(function (v) {
+      var monto = Number(v.cantidad_vendida) * Number(v.precio_venta_aplicado);
+      totalDia += monto;
+      return '<div class="resumen-item">' +
+        '<span class="resumen-nombre">' + esc(v.nombre_producto || '—') + '</span>' +
+        '<span class="resumen-cant">' + v.cantidad_vendida + '</span>' +
+        '<span class="resumen-monto">$' + fmt(monto) + '</span>' +
+        '</div>';
+    }).join('');
+
+    var nOrdenes = Object.keys(porOrden).length;
+    el.innerHTML =
+      '<div style="font-size:12px;color:var(--color-base-suave);margin-bottom:10px;">' +
+        nOrdenes + ' orden(es) · Total del día: <strong style="color:var(--color-primario-oscuro);">$' + fmt(totalDia) + '</strong>' +
+      '</div>' +
+      filas;
+  }
+
+  /* ── Render tabla de stock ───────────────────────────────────────── */
+  function renderStockDisponible(stock) {
+    var el = document.getElementById('stock-disponible');
+    if (!stock || stock.length === 0) {
+      el.innerHTML = '<div class="estado-vacio">No tienes productos asignados.</div>';
+      return;
+    }
+
+    var filas = stock.map(function (item) {
+      var disp  = Number(item.cantidad_disponible);
+      var clase = disp > 5 ? 'ok' : 'bajo';
+      return '<tr>' +
+        '<td>' + esc(item.nombre_producto) + '</td>' +
+        '<td style="text-align:center;"><span class="stock-badge ' + clase + '">' + disp + '</span></td>' +
+        '<td style="text-align:right;">$' + fmt(item.precio_venta) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    el.innerHTML =
+      '<div style="overflow-x:auto;">' +
+      '<table><thead><tr>' +
+        '<th>Producto</th>' +
+        '<th style="text-align:center;">Disponible</th>' +
+        '<th style="text-align:right;">Precio</th>' +
+      '</tr></thead>' +
+      '<tbody>' + filas + '</tbody></table></div>';
+  }
+
+  /* ── Mensaje flash ───────────────────────────────────────────────── */
+  function mostrarMensaje(texto, tipo) {
+    var existing = document.getElementById('flash-msg');
+    if (existing) existing.remove();
+
+    var div = document.createElement('div');
+    div.id = 'flash-msg';
+    div.className = 'mensaje mensaje-' + (tipo === 'exito' ? 'exito' : 'error');
+    div.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;max-width:340px;width:90%;';
+    div.textContent = texto;
+    document.body.appendChild(div);
+    setTimeout(function () { if (div.parentNode) div.remove(); }, 4000);
+  }
+
+  /* ── Utilidades ──────────────────────────────────────────────────── */
+  function fmt(n) {
+    return Number(n).toLocaleString('es-SV', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function fechaHoy() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      (d.getMonth() < 9 ? '0' : '') + (d.getMonth() + 1) + '-' +
+      (d.getDate() < 10 ? '0' : '') + d.getDate();
+  }
+</script>
+</body>
+</html>

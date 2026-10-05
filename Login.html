@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('Estilos'); ?>
+</head>
+<body>
+  <div class="contenedor">
+
+    <div class="encabezado-app">
+      <div>
+        <h1>Control de Inventario</h1>
+        <p class="subtitulo">Selecciona tu rol para continuar</p>
+      </div>
+    </div>
+
+    <div id="zonaMensaje"></div>
+
+    <div id="pantallaSeleccionRol">
+      <div class="opcion-rol" onclick="mostrarPantalla_('admin')">
+        <div class="icono">A</div>
+        <div class="texto">
+          <strong>Administrador</strong>
+          <span>Gestiona productos, empleados, ingresos y reportes</span>
+        </div>
+      </div>
+
+      <div class="opcion-rol" onclick="mostrarPantalla_('empleado')">
+        <div class="icono">E</div>
+        <div class="texto">
+          <strong>Empleado</strong>
+          <span>Registra tus ventas del día</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="pantallaAdmin" class="oculto">
+      <div class="card">
+        <h2>Acceso de administrador</h2>
+        <p style="font-size:13px; color:var(--color-base-suave); margin-top:-6px;">
+          Esta vista requiere que abras el sistema con la cuenta de Google autorizada.
+        </p>
+        <button class="boton boton-primario" onclick="irAVistaAdmin_()">
+          Continuar como administrador
+        </button>
+        <button class="boton boton-fantasma" style="margin-top:10px;" onclick="mostrarPantalla_('inicio')">
+          Volver
+        </button>
+      </div>
+    </div>
+
+    <div id="pantallaEmpleado" class="oculto">
+      <div class="card">
+        <h2>¿Quién eres?</h2>
+        <div class="campo">
+          <label for="selectEmpleado">Selecciona tu nombre</label>
+          <select id="selectEmpleado">
+            <option value="">Cargando empleados...</option>
+          </select>
+        </div>
+        <button class="boton boton-primario" id="btnContinuarEmpleado" onclick="irAVistaEmpleado_()">
+          Continuar
+        </button>
+        <button class="boton boton-fantasma" style="margin-top:10px;" onclick="mostrarPantalla_('inicio')">
+          Volver
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function mostrarPantalla_(pantalla) {
+      document.getElementById('pantallaSeleccionRol').classList.add('oculto');
+      document.getElementById('pantallaAdmin').classList.add('oculto');
+      document.getElementById('pantallaEmpleado').classList.add('oculto');
+      document.getElementById('zonaMensaje').innerHTML = '';
+
+      if (pantalla === 'inicio') {
+        document.getElementById('pantallaSeleccionRol').classList.remove('oculto');
+      } else if (pantalla === 'admin') {
+        document.getElementById('pantallaAdmin').classList.remove('oculto');
+      } else if (pantalla === 'empleado') {
+        document.getElementById('pantallaEmpleado').classList.remove('oculto');
+        cargarListaEmpleados_();
+      }
+    }
+
+var URL_BASE = '<?= urlBase ?>';
+
+function irAVistaAdmin_() {
+  window.top.location.href = URL_BASE + '?vista=admin';
+}
+
+function irAVistaEmpleado_() {
+  var select = document.getElementById('selectEmpleado');
+  var idEmpleado = select.value;
+
+  if (!idEmpleado) {
+    mostrarMensaje_('error', 'Selecciona tu nombre antes de continuar.');
+    return;
+  }
+
+  window.top.location.href = URL_BASE + '?vista=empleado&id_empleado=' + encodeURIComponent(idEmpleado);
+}
+
+    function cargarListaEmpleados_() {
+      var select = document.getElementById('selectEmpleado');
+      select.innerHTML = '<option value="">Cargando empleados...</option>';
+
+      google.script.run
+        .withSuccessHandler(function (empleados) {
+          if (!empleados || empleados.length === 0) {
+            select.innerHTML = '<option value="">No hay empleados activos registrados</option>';
+            return;
+          }
+          var opciones = '<option value="">Selecciona...</option>';
+          empleados.forEach(function (emp) {
+            opciones += '<option value="' + emp.id_empleado + '">' + emp.nombre_empleado + '</option>';
+          });
+          select.innerHTML = opciones;
+        })
+        .withFailureHandler(function (error) {
+          select.innerHTML = '<option value="">Error al cargar empleados</option>';
+          mostrarMensaje_('error', 'No se pudo cargar la lista de empleados: ' + error.message);
+        })
+        .obtenerListaEmpleadosParaLogin();
+    }
+
+
+
+    function mostrarMensaje_(tipo, texto) {
+      var clase = tipo === 'error' ? 'mensaje-error' : 'mensaje-exito';
+      document.getElementById('zonaMensaje').innerHTML =
+        '<div class="mensaje ' + clase + '">' + texto + '</div>';
+    }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,455 @@
+<div class="card" style="padding-bottom:4px;">
+  <div class="nav-admin" style="margin-bottom:0;">
+    <button class="activo" data-tab-mov="ingreso" onclick="cambiarTabMovimiento_('ingreso')">Ingreso</button>
+    <button data-tab-mov="asignacion" onclick="cambiarTabMovimiento_('asignacion')">Asignación</button>
+    <button data-tab-mov="devolucionEmpleado" onclick="cambiarTabMovimiento_('devolucionEmpleado')">Devolución empleado</button>
+    <button data-tab-mov="devolucionCliente" onclick="cambiarTabMovimiento_('devolucionCliente')">Devolución cliente</button>
+  </div>
+</div>
+
+<div id="tabIngreso" class="tab-movimiento">
+  <div class="card">
+    <h2>Ingreso de mercancía</h2>
+    <p style="font-size:13px; color:var(--color-base-suave); margin-top:-8px;">Suma unidades al inventario general.</p>
+
+    <div class="campo">
+      <label for="ingProducto">Producto</label>
+      <select id="ingProducto"></select>
+    </div>
+
+    <div class="campo">
+      <label for="ingCantidad">Cantidad recibida</label>
+      <input type="number" id="ingCantidad" min="1" step="1" placeholder="Ej. 50">
+    </div>
+
+    <div class="campo">
+      <label for="ingObservaciones">Observaciones (opcional)</label>
+      <input type="text" id="ingObservaciones" placeholder="Ej. Factura #1234, proveedor X">
+    </div>
+
+    <button class="boton boton-primario" id="btnRegistrarIngreso" onclick="registrarIngreso_()">
+      Registrar ingreso
+    </button>
+  </div>
+</div>
+
+<div id="tabAsignacion" class="tab-movimiento oculto">
+  <div class="card">
+    <h2>Asignar stock a empleado</h2>
+    <p style="font-size:13px; color:var(--color-base-suave); margin-top:-8px;">Resta del inventario general y lo suma al sub-stock del empleado.</p>
+
+    <div class="campo">
+      <label for="asigProducto">Producto</label>
+      <select id="asigProducto" onchange="mostrarStockDisponibleAsignacion_()"></select>
+    </div>
+
+    <div id="cuadroStockAsignacion" class="oculto" style="background:var(--color-primario-claro); border-radius:var(--radio-md); padding:10px 14px; margin-bottom:16px; font-size:13px;">
+      Disponible en inventario general: <strong id="stockDisponibleAsignacionTexto">0</strong>
+    </div>
+
+    <div class="campo">
+      <label for="asigEmpleado">Empleado</label>
+      <select id="asigEmpleado"></select>
+    </div>
+
+    <div class="campo">
+      <label for="asigCantidad">Cantidad a asignar</label>
+      <input type="number" id="asigCantidad" min="1" step="1" placeholder="Ej. 10">
+    </div>
+
+    <button class="boton boton-primario" id="btnRegistrarAsignacion" onclick="registrarAsignacion_()">
+      Asignar al empleado
+    </button>
+  </div>
+</div>
+
+<div id="tabDevolucionEmpleado" class="tab-movimiento oculto">
+  <div class="card">
+    <h2>Devolución de empleado</h2>
+    <p style="font-size:13px; color:var(--color-base-suave); margin-top:-8px;">Producto no vendido que regresa al inventario general.</p>
+
+    <div class="campo">
+      <label for="devEmpEmpleado">Empleado</label>
+      <select id="devEmpEmpleado" onchange="cargarStockParaDevolucion_()"></select>
+    </div>
+
+    <div class="campo">
+      <label for="devEmpProducto">Producto</label>
+      <select id="devEmpProducto">
+        <option value="">Selecciona primero un empleado</option>
+      </select>
+    </div>
+
+    <div id="cuadroStockDevolucion" class="oculto" style="background:var(--color-primario-claro); border-radius:var(--radio-md); padding:10px 14px; margin-bottom:16px; font-size:13px;">
+      Este empleado tiene <strong id="stockDevolucionTexto">0</strong> unidades de este producto
+    </div>
+
+    <div class="campo">
+      <label for="devEmpCantidad">Cantidad a devolver</label>
+      <input type="number" id="devEmpCantidad" min="1" step="1" placeholder="Ej. 5">
+    </div>
+
+    <button class="boton boton-primario" id="btnRegistrarDevolucionEmpleado" onclick="registrarDevolucionEmpleado_()">
+      Registrar devolución
+    </button>
+  </div>
+</div>
+
+<div id="tabDevolucionCliente" class="tab-movimiento oculto">
+  <div class="card">
+    <h2>Devolución de cliente final</h2>
+    <p style="font-size:13px; color:var(--color-base-suave); margin-top:-8px;">Producto ya vendido que el cliente regresó. El producto vuelve al sub-stock del empleado que hizo la venta.</p>
+
+    <div class="campo">
+      <label for="devClienteEmpleado">Empleado que hizo la venta</label>
+      <select id="devClienteEmpleado" onchange="cargarVentasParaDevolucion_()"></select>
+    </div>
+
+    <div class="campo">
+      <label for="devClienteVenta">Venta a devolver</label>
+      <select id="devClienteVenta">
+        <option value="">Selecciona primero un empleado</option>
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="devClienteObservaciones">Observaciones (opcional)</label>
+      <input type="text" id="devClienteObservaciones" placeholder="Ej. Producto defectuoso">
+    </div>
+
+    <button class="boton boton-primario" id="btnRegistrarDevolucionCliente" onclick="registrarDevolucionCliente_()">
+      Registrar devolución
+    </button>
+  </div>
+</div>
+
+<script>
+  var productosActivosMovCache_ = [];
+  var empleadosActivosMovCache_ = [];
+
+  function inicializarMovimientos_() {
+    cargarProductosParaMovimientos_();
+    cargarEmpleadosParaMovimientos_();
+  }
+
+  function cambiarTabMovimiento_(tab) {
+    var tabs = document.querySelectorAll('.tab-movimiento');
+    for (var i = 0; i < tabs.length; i++) tabs[i].classList.add('oculto');
+
+    var botones = document.querySelectorAll('.nav-admin button[data-tab-mov]');
+    for (var j = 0; j < botones.length; j++) botones[j].classList.remove('activo');
+
+    document.getElementById('tab' + capitalizar_(tab)).classList.remove('oculto');
+    document.querySelector('.nav-admin button[data-tab-mov="' + tab + '"]').classList.add('activo');
+  }
+
+  function cargarProductosParaMovimientos_() {
+    google.script.run
+      .withSuccessHandler(function (productos) {
+        productosActivosMovCache_ = productos || [];
+        poblarSelectGenerico_('ingProducto', productos, 'id_producto', 'nombre_producto', 'Selecciona un producto...');
+        poblarSelectGenerico_('asigProducto', productos, 'id_producto', 'nombre_producto', 'Selecciona un producto...');
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', 'No se pudieron cargar los productos: ' + error.message);
+      })
+      .apiListarProductosActivos();
+  }
+
+  function cargarEmpleadosParaMovimientos_() {
+    google.script.run
+      .withSuccessHandler(function (empleados) {
+        empleadosActivosMovCache_ = empleados || [];
+        poblarSelectGenerico_('asigEmpleado', empleados, 'id_empleado', 'nombre_empleado', 'Selecciona un empleado...');
+        poblarSelectGenerico_('devEmpEmpleado', empleados, 'id_empleado', 'nombre_empleado', 'Selecciona un empleado...');
+        poblarSelectGenerico_('devClienteEmpleado', empleados, 'id_empleado', 'nombre_empleado', 'Selecciona un empleado...');
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', 'No se pudieron cargar los empleados: ' + error.message);
+      })
+      .apiListarEmpleadosActivos();
+  }
+
+  function poblarSelectGenerico_(idSelect, items, campoValor, campoTexto, textoVacio) {
+    var select = document.getElementById(idSelect);
+    if (!items || items.length === 0) {
+      select.innerHTML = '<option value="">No hay opciones disponibles</option>';
+      return;
+    }
+    var opciones = '<option value="">' + textoVacio + '</option>';
+    items.forEach(function (item) {
+      opciones += '<option value="' + item[campoValor] + '">' + item[campoTexto] + '</option>';
+    });
+    select.innerHTML = opciones;
+  }
+
+  /* ───────────── Ingreso de proveedor ───────────── */
+
+  function registrarIngreso_() {
+    var idProducto = document.getElementById('ingProducto').value;
+    var cantidad = document.getElementById('ingCantidad').value;
+    var observaciones = document.getElementById('ingObservaciones').value.trim();
+
+    if (!idProducto || !cantidad || Number(cantidad) <= 0) {
+      mostrarMensajeGlobal_('error', 'Selecciona un producto e ingresa una cantidad válida.');
+      return;
+    }
+
+    var boton = document.getElementById('btnRegistrarIngreso');
+    boton.disabled = true;
+    boton.textContent = 'Registrando...';
+
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Ingreso registrado correctamente.');
+        document.getElementById('ingCantidad').value = '';
+        document.getElementById('ingObservaciones').value = '';
+        document.getElementById('ingProducto').value = '';
+        boton.disabled = false;
+        boton.textContent = 'Registrar ingreso';
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', error.message);
+        boton.disabled = false;
+        boton.textContent = 'Registrar ingreso';
+      })
+      .apiRegistrarIngresoProveedor({
+        id_producto: idProducto,
+        cantidad: cantidad,
+        observaciones: observaciones
+      });
+  }
+
+  /* ───────────── Asignación a empleado ───────────── */
+
+  function mostrarStockDisponibleAsignacion_() {
+    var idProducto = document.getElementById('asigProducto').value;
+    var cuadro = document.getElementById('cuadroStockAsignacion');
+
+    if (!idProducto) {
+      cuadro.classList.add('oculto');
+      return;
+    }
+
+    var producto = productosActivosMovCache_.filter(function (p) {
+      return String(p.id_producto) === String(idProducto);
+    })[0];
+
+    if (!producto) {
+      cuadro.classList.add('oculto');
+      return;
+    }
+
+    document.getElementById('stockDisponibleAsignacionTexto').textContent = producto.stock_total;
+    document.getElementById('asigCantidad').max = producto.stock_total;
+    cuadro.classList.remove('oculto');
+  }
+
+  function registrarAsignacion_() {
+    var idProducto = document.getElementById('asigProducto').value;
+    var idEmpleado = document.getElementById('asigEmpleado').value;
+    var cantidad = document.getElementById('asigCantidad').value;
+
+    if (!idProducto || !idEmpleado || !cantidad || Number(cantidad) <= 0) {
+      mostrarMensajeGlobal_('error', 'Completa producto, empleado y una cantidad válida.');
+      return;
+    }
+
+    var boton = document.getElementById('btnRegistrarAsignacion');
+    boton.disabled = true;
+    boton.textContent = 'Asignando...';
+
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Stock asignado correctamente.');
+        document.getElementById('asigCantidad').value = '';
+        document.getElementById('asigProducto').value = '';
+        document.getElementById('asigEmpleado').value = '';
+        document.getElementById('cuadroStockAsignacion').classList.add('oculto');
+        cargarProductosParaMovimientos_();
+        boton.disabled = false;
+        boton.textContent = 'Asignar al empleado';
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', error.message);
+        boton.disabled = false;
+        boton.textContent = 'Asignar al empleado';
+      })
+      .apiRegistrarAsignacionEmpleado({
+        id_producto: idProducto,
+        id_empleado: idEmpleado,
+        cantidad: cantidad
+      });
+  }
+
+  /* ───────────── Devolución de empleado ───────────── */
+
+  function cargarStockParaDevolucion_() {
+    var idEmpleado = document.getElementById('devEmpEmpleado').value;
+    var selectProducto = document.getElementById('devEmpProducto');
+    document.getElementById('cuadroStockDevolucion').classList.add('oculto');
+
+    if (!idEmpleado) {
+      selectProducto.innerHTML = '<option value="">Selecciona primero un empleado</option>';
+      return;
+    }
+
+    selectProducto.innerHTML = '<option value="">Cargando...</option>';
+
+    google.script.run
+      .withSuccessHandler(function (stock) {
+        if (!stock || stock.length === 0) {
+          selectProducto.innerHTML = '<option value="">Este empleado no tiene stock asignado</option>';
+          return;
+        }
+        var opciones = '<option value="">Selecciona un producto...</option>';
+        stock.forEach(function (item) {
+          opciones += '<option value="' + item.id_producto + '" data-disponible="' + item.cantidad_disponible + '">' +
+            item.nombre_producto + ' (' + item.cantidad_disponible + ' disp.)</option>';
+        });
+        selectProducto.innerHTML = opciones;
+      })
+      .withFailureHandler(function (error) {
+        selectProducto.innerHTML = '<option value="">Error al cargar</option>';
+        mostrarMensajeGlobal_('error', error.message);
+      })
+      .apiListarStockDeEmpleado(idEmpleado);
+  }
+
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'devEmpProducto') {
+      var opcionSeleccionada = e.target.options[e.target.selectedIndex];
+      var disponible = opcionSeleccionada.getAttribute('data-disponible');
+      var cuadro = document.getElementById('cuadroStockDevolucion');
+
+      if (disponible) {
+        document.getElementById('stockDevolucionTexto').textContent = disponible;
+        document.getElementById('devEmpCantidad').max = disponible;
+        cuadro.classList.remove('oculto');
+      } else {
+        cuadro.classList.add('oculto');
+      }
+    }
+  });
+
+  function registrarDevolucionEmpleado_() {
+    var idEmpleado = document.getElementById('devEmpEmpleado').value;
+    var idProducto = document.getElementById('devEmpProducto').value;
+    var cantidad = document.getElementById('devEmpCantidad').value;
+
+    if (!idEmpleado || !idProducto || !cantidad || Number(cantidad) <= 0) {
+      mostrarMensajeGlobal_('error', 'Completa empleado, producto y una cantidad válida.');
+      return;
+    }
+
+    var boton = document.getElementById('btnRegistrarDevolucionEmpleado');
+    boton.disabled = true;
+    boton.textContent = 'Registrando...';
+
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Devolución registrada correctamente.');
+        document.getElementById('devEmpCantidad').value = '';
+        document.getElementById('cuadroStockDevolucion').classList.add('oculto');
+        cargarStockParaDevolucion_();
+        cargarProductosParaMovimientos_();
+        boton.disabled = false;
+        boton.textContent = 'Registrar devolución';
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', error.message);
+        boton.disabled = false;
+        boton.textContent = 'Registrar devolución';
+      })
+      .apiRegistrarDevolucionEmpleado({
+        id_producto: idProducto,
+        id_empleado: idEmpleado,
+        cantidad: cantidad
+      });
+  }
+
+  /* ───────────── Devolución de cliente final ───────────── */
+
+  function cargarVentasParaDevolucion_() {
+    var idEmpleado = document.getElementById('devClienteEmpleado').value;
+    var selectVenta = document.getElementById('devClienteVenta');
+
+    if (!idEmpleado) {
+      selectVenta.innerHTML = '<option value="">Selecciona primero un empleado</option>';
+      return;
+    }
+
+    selectVenta.innerHTML = '<option value="">Cargando...</option>';
+
+    var hoy = new Date();
+    var hace30Dias = new Date();
+    hace30Dias.setDate(hoy.getDate() - 30);
+
+    google.script.run
+      .withSuccessHandler(function (ventas) {
+        var ventasElegibles = (ventas || []).filter(function (v) {
+          return v.estado_devolucion === 'Ninguna';
+        });
+
+        if (ventasElegibles.length === 0) {
+          selectVenta.innerHTML = '<option value="">No hay ventas elegibles para devolución</option>';
+          return;
+        }
+
+        var opciones = '<option value="">Selecciona una venta...</option>';
+        ventasElegibles.forEach(function (v) {
+          opciones += '<option value="' + v.id_venta + '">' +
+            v.fecha_venta + ' — ' + v.nombre_producto + ' (' + v.cantidad_vendida + ' un.)</option>';
+        });
+        selectVenta.innerHTML = opciones;
+      })
+      .withFailureHandler(function (error) {
+        selectVenta.innerHTML = '<option value="">Error al cargar</option>';
+        mostrarMensajeGlobal_('error', error.message);
+      })
+      .apiListarVentasDeEmpleado(
+        idEmpleado,
+        formatearFechaParaApi_(hace30Dias),
+        formatearFechaParaApi_(hoy)
+      );
+  }
+
+  function registrarDevolucionCliente_() {
+    var idVenta = document.getElementById('devClienteVenta').value;
+    var observaciones = document.getElementById('devClienteObservaciones').value.trim();
+
+    if (!idVenta) {
+      mostrarMensajeGlobal_('error', 'Selecciona la venta a devolver.');
+      return;
+    }
+
+    var boton = document.getElementById('btnRegistrarDevolucionCliente');
+    boton.disabled = true;
+    boton.textContent = 'Registrando...';
+
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Devolución de cliente registrada correctamente.');
+        document.getElementById('devClienteObservaciones').value = '';
+        cargarVentasParaDevolucion_();
+        boton.disabled = false;
+        boton.textContent = 'Registrar devolución';
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', error.message);
+        boton.disabled = false;
+        boton.textContent = 'Registrar devolución';
+      })
+      .apiRegistrarDevolucionCliente({
+        id_venta: idVenta,
+        observaciones: observaciones
+      });
+  }
+
+  function formatearFechaParaApi_(fecha) {
+    var anio = fecha.getFullYear();
+    var mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    var dia = String(fecha.getDate()).padStart(2, '0');
+    return anio + '-' + mes + '-' + dia;
+  }
+</script>

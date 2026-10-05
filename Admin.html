@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('Estilos'); ?>
+  <style>
+    .nav-admin {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 20px;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .nav-admin::-webkit-scrollbar { display: none; }
+
+    .nav-admin button {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid var(--color-borde);
+      border-radius: 999px;
+      background: var(--color-superficie-card);
+      color: var(--color-base-suave);
+      cursor: pointer;
+    }
+
+    .nav-admin button.activo {
+      background: var(--color-primario);
+      border-color: var(--color-primario);
+      color: #FFFFFF;
+    }
+
+    .seccion-admin { display: none; }
+    .seccion-admin.activa { display: block; }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+
+    <div class="encabezado-app">
+      <div>
+        <h1>Panel de Administrador</h1>
+        <p class="subtitulo">Control de Inventario</p>
+      </div>
+      <button class="boton" style="width:auto; padding:8px 14px; font-size:13px; background:transparent; border:1px solid #FFFFFF; color:#FFFFFF;" onclick="irAlInicio_()">
+        Salir
+      </button>
+    </div>
+
+    <nav class="nav-admin">
+      <button class="activo" data-seccion="productos" onclick="cambiarSeccion_('productos')">Productos</button>
+      <button data-seccion="empleados" onclick="cambiarSeccion_('empleados')">Empleados</button>
+      <button data-seccion="movimientos" onclick="cambiarSeccion_('movimientos')">Movimientos</button>
+      <button data-seccion="reportes" onclick="cambiarSeccion_('reportes')">Reportes</button>
+    </nav>
+
+    <div id="zonaMensajeGlobal"></div>
+
+    <div id="seccionProductos" class="seccion-admin activa">
+      <?!= include('AdminProductos'); ?>
+    </div>
+
+    <div id="seccionEmpleados" class="seccion-admin">
+      <?!= include('AdminEmpleados'); ?>
+    </div>
+
+    <div id="seccionMovimientos" class="seccion-admin">
+      <?!= include('AdminMovimientos'); ?>
+    </div>
+
+    <div id="seccionReportes" class="seccion-admin">
+      <?!= include('AdminReportes'); ?>
+    </div>
+
+  </div>
+
+  <script>
+    var URL_BASE = '<?= urlBase ?>';
+
+    function cambiarSeccion_(nombreSeccion) {
+      var secciones = document.querySelectorAll('.seccion-admin');
+      for (var i = 0; i < secciones.length; i++) {
+        secciones[i].classList.remove('activa');
+      }
+
+      var botones = document.querySelectorAll('.nav-admin button');
+      for (var j = 0; j < botones.length; j++) {
+        botones[j].classList.remove('activo');
+      }
+
+      document.getElementById('seccion' + capitalizar_(nombreSeccion)).classList.add('activa');
+
+      var botonActivo = document.querySelector('.nav-admin button[data-seccion="' + nombreSeccion + '"]');
+      if (botonActivo) botonActivo.classList.add('activo');
+
+      document.getElementById('zonaMensajeGlobal').innerHTML = '';
+
+      // Cada módulo expone su propia función de "recarga al entrar",
+      // definida en su respectivo archivo parcial.
+      if (nombreSeccion === 'productos' && typeof cargarProductos_ === 'function') cargarProductos_();
+      if (nombreSeccion === 'empleados' && typeof cargarEmpleados_ === 'function') cargarEmpleados_();
+      if (nombreSeccion === 'movimientos' && typeof inicializarMovimientos_ === 'function') inicializarMovimientos_();
+      if (nombreSeccion === 'reportes' && typeof inicializarReportes_ === 'function') inicializarReportes_();
+    }
+
+    function capitalizar_(texto) {
+      return texto.charAt(0).toUpperCase() + texto.slice(1);
+    }
+
+function irAlInicio_() {
+  window.top.location.href = URL_BASE;
+}
+    function mostrarMensajeGlobal_(tipo, texto) {
+      var clase = tipo === 'error' ? 'mensaje-error' : 'mensaje-exito';
+      document.getElementById('zonaMensajeGlobal').innerHTML =
+        '<div class="mensaje ' + clase + '">' + texto + '</div>';
+
+      if (tipo === 'exito') {
+        setTimeout(function () {
+          document.getElementById('zonaMensajeGlobal').innerHTML = '';
+        }, 3500);
+      }
+    }
+
+console.log('Estado de carga del documento:', document.readyState);
+
+document.addEventListener('DOMContentLoaded', function () {
+  console.log('DOMContentLoaded se disparó');
+  console.log('typeof cargarProductos_ al momento del evento:', typeof cargarProductos_);
+  if (typeof cargarProductos_ === 'function') cargarProductos_();
+});
+  </script>
+</body>
+</html>

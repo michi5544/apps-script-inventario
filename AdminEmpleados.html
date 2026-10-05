@@ -1,0 +1,204 @@
+<div class="card">
+  <h2 id="tituloFormularioEmpleado">Nuevo empleado</h2>
+
+  <input type="hidden" id="empleadoIdEnEdicion" value="">
+
+  <div class="campo">
+    <label for="empNombre">Nombre del empleado</label>
+    <input type="text" id="empNombre" placeholder="Ej. Carlos Pérez">
+  </div>
+
+  <div class="campo">
+    <label for="empCorreo">Correo (opcional)</label>
+    <input type="email" id="empCorreo" placeholder="Ej. carlos@correo.com">
+  </div>
+
+  <div style="display:flex; gap:10px;">
+    <button class="boton boton-primario" id="btnGuardarEmpleado" onclick="guardarEmpleado_()">
+      Guardar empleado
+    </button>
+    <button class="boton boton-fantasma oculto" id="btnCancelarEdicionEmpleado" style="width:auto; padding:12px 18px;" onclick="cancelarEdicionEmpleado_()">
+      Cancelar
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+    <h2 style="margin:0;">Empleados</h2>
+    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:400; margin:0;">
+      <input type="checkbox" id="checkVerInactivosEmpleados" onchange="cargarEmpleados_()" style="width:auto;">
+      Ver inactivos
+    </label>
+  </div>
+  <div id="tablaEmpleados">
+    <p style="font-size:13px; color:var(--color-base-suave);">Cargando...</p>
+  </div>
+</div>
+
+<script>
+  var empleadosCache_ = [];
+
+  function cargarEmpleados_() {
+    var verInactivos = document.getElementById('checkVerInactivosEmpleados').checked;
+    var contenedor = document.getElementById('tablaEmpleados');
+    contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-base-suave);">Cargando...</p>';
+
+    var llamada = google.script.run
+      .withSuccessHandler(function (empleados) {
+        empleadosCache_ = empleados || [];
+        poblarTablaEmpleados_(empleadosCache_);
+      })
+      .withFailureHandler(function (error) {
+        contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-alerta);">Error al cargar: ' + error.message + '</p>';
+      });
+
+    if (verInactivos) {
+      llamada.apiListarTodosLosEmpleados();
+    } else {
+      llamada.apiListarEmpleadosActivos();
+    }
+  }
+
+  function poblarTablaEmpleados_(empleados) {
+    var contenedor = document.getElementById('tablaEmpleados');
+
+    if (empleados.length === 0) {
+      contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-base-suave);">No hay empleados registrados.</p>';
+      return;
+    }
+
+    var html = '<table><thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th></th></tr></thead><tbody>';
+
+    empleados.forEach(function (e) {
+      var insigniaEstado = e.activo
+        ? '<span class="insignia insignia-exito">Activo</span>'
+        : '<span class="insignia insignia-alerta">Inactivo</span>';
+
+      var botonToggle = e.activo
+        ? '<button class="boton boton-fantasma" style="width:auto; padding:6px 10px; font-size:12px;" onclick="confirmarDesactivarEmpleado_(' + e.id_empleado + ')">Desactivar</button>'
+        : '<button class="boton boton-secundario" style="width:auto; padding:6px 10px; font-size:12px;" onclick="reactivarEmpleado_(' + e.id_empleado + ')">Reactivar</button>';
+
+      html += '<tr>' +
+        '<td>' + e.nombre_empleado + '</td>' +
+        '<td>' + (e.correo || '<span style="color:var(--color-base-suave);">—</span>') + '</td>' +
+        '<td>' + insigniaEstado + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<button class="boton boton-fantasma" style="width:auto; padding:6px 10px; font-size:12px; margin-right:4px;" onclick="editarEmpleadoDesdeTabla_(' + e.id_empleado + ')">Editar</button>' +
+          botonToggle +
+        '</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+    contenedor.innerHTML = html;
+  }
+
+  function guardarEmpleado_() {
+    var idEnEdicion = document.getElementById('empleadoIdEnEdicion').value;
+
+    var datos = {
+      nombre_empleado: document.getElementById('empNombre').value.trim(),
+      correo: document.getElementById('empCorreo').value.trim()
+    };
+
+    if (!datos.nombre_empleado) {
+      mostrarMensajeGlobal_('error', 'El nombre del empleado es obligatorio.');
+      return;
+    }
+
+    var boton = document.getElementById('btnGuardarEmpleado');
+    boton.disabled = true;
+    boton.textContent = 'Guardando...';
+
+    var alTerminar = function () {
+      boton.disabled = false;
+      boton.textContent = 'Guardar empleado';
+    };
+
+    if (idEnEdicion) {
+      google.script.run
+        .withSuccessHandler(function () {
+          mostrarMensajeGlobal_('exito', 'Empleado actualizado correctamente.');
+          cancelarEdicionEmpleado_();
+          cargarEmpleados_();
+          alTerminar();
+        })
+        .withFailureHandler(function (error) {
+          mostrarMensajeGlobal_('error', error.message);
+          alTerminar();
+        })
+        .apiEditarEmpleado(Number(idEnEdicion), datos);
+    } else {
+      google.script.run
+        .withSuccessHandler(function () {
+          mostrarMensajeGlobal_('exito', 'Empleado creado correctamente.');
+          limpiarFormularioEmpleado_();
+          cargarEmpleados_();
+          alTerminar();
+        })
+        .withFailureHandler(function (error) {
+          mostrarMensajeGlobal_('error', error.message);
+          alTerminar();
+        })
+        .apiCrearEmpleado(datos);
+    }
+  }
+
+  function editarEmpleadoDesdeTabla_(idEmpleado) {
+    var empleado = empleadosCache_.filter(function (e) { return e.id_empleado === idEmpleado; })[0];
+    if (!empleado) return;
+
+    document.getElementById('empleadoIdEnEdicion').value = empleado.id_empleado;
+    document.getElementById('empNombre').value = empleado.nombre_empleado;
+    document.getElementById('empCorreo').value = empleado.correo || '';
+
+    document.getElementById('tituloFormularioEmpleado').textContent = 'Editar empleado';
+    document.getElementById('btnCancelarEdicionEmpleado').classList.remove('oculto');
+
+    document.getElementById('empNombre').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function cancelarEdicionEmpleado_() {
+    limpiarFormularioEmpleado_();
+  }
+
+  function limpiarFormularioEmpleado_() {
+    document.getElementById('empleadoIdEnEdicion').value = '';
+    document.getElementById('empNombre').value = '';
+    document.getElementById('empCorreo').value = '';
+    document.getElementById('tituloFormularioEmpleado').textContent = 'Nuevo empleado';
+    document.getElementById('btnCancelarEdicionEmpleado').classList.add('oculto');
+  }
+
+  function confirmarDesactivarEmpleado_(idEmpleado) {
+    var empleado = empleadosCache_.filter(function (e) { return e.id_empleado === idEmpleado; })[0];
+    var nombre = empleado ? empleado.nombre_empleado : 'este empleado';
+
+    if (!window.confirm('¿Desactivar a "' + nombre + '"? Solo es posible si no tiene stock pendiente asignado.')) {
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Empleado desactivado.');
+        cargarEmpleados_();
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', error.message);
+      })
+      .apiDesactivarEmpleado(idEmpleado);
+  }
+
+  function reactivarEmpleado_(idEmpleado) {
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Empleado reactivado.');
+        cargarEmpleados_();
+      })
+      .withFailureHandler(function (error) {
+        mostrarMensajeGlobal_('error', error.message);
+      })
+      .apiReactivarEmpleado(idEmpleado);
+  }
+</script>

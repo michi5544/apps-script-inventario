@@ -1,0 +1,1120 @@
+  <style>
+    /* ── Tabs de reporte ─────────────────────────────────────────── */
+    .rep-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid var(--color-borde);
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 0;
+    }
+    .rep-tab {
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--color-base-suave);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color .15s, border-color .15s;
+    }
+    .rep-tab:hover { color: var(--color-primario); }
+    .rep-tab.activo {
+      color: var(--color-primario-oscuro);
+      border-bottom-color: var(--color-primario);
+    }
+    .rep-panel { display: none; }
+    .rep-panel.activo { display: block; }
+
+    /* ── Filtros ─────────────────────────────────────────────────── */
+    .filtros-card {
+      background: var(--color-superficie-card);
+      border: 1px solid var(--color-borde);
+      border-radius: var(--radio-lg);
+      box-shadow: var(--sombra-card);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .filtros-fila {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 12px;
+    }
+    .filtro-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .filtro-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--color-base-suave);
+    }
+    .filtro-grupo input,
+    .filtro-grupo select {
+      min-width: 130px;
+    }
+    .filtros-fechas-par {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .filtros-fechas-par input { min-width: 120px; }
+    .sep-fecha {
+      font-size: 12px;
+      color: var(--color-base-suave);
+    }
+
+    /* ── Chips de rango rápido ───────────────────────────────────── */
+    .chips-rango {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .chip {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--color-borde);
+      background: var(--color-superficie);
+      color: var(--color-base-suave);
+      cursor: pointer;
+      transition: background .12s, border-color .12s, color .12s;
+      font-family: inherit;
+    }
+    .chip.activo {
+      background: var(--color-primario-claro);
+      border-color: var(--color-primario);
+      color: var(--color-primario-oscuro);
+    }
+
+    /* ── Métricas ────────────────────────────────────────────────── */
+    .metricas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .metrica {
+      background: var(--color-superficie);
+      border-radius: var(--radio-md);
+      padding: 14px 16px;
+    }
+    .metrica-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--color-base-suave);
+      margin: 0 0 4px;
+    }
+    .metrica-valor {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-primario-oscuro);
+      margin: 0;
+    }
+    .metrica-sub {
+      font-size: 12px;
+      color: var(--color-base-suave);
+      margin: 3px 0 0;
+    }
+
+    /* ── Barras horizontales ─────────────────────────────────────── */
+    .barras-wrap { margin-bottom: 4px; }
+    .barra-fila {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .barra-etiqueta {
+      font-size: 13px;
+      color: var(--color-base-suave);
+      width: 120px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .barra-pista {
+      flex: 1;
+      height: 8px;
+      background: var(--color-superficie);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .barra-relleno {
+      height: 100%;
+      border-radius: 999px;
+      transition: width .35s ease;
+    }
+    .barra-valor {
+      font-size: 12px;
+      color: var(--color-base-suave);
+      width: 70px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── Dos columnas ────────────────────────────────────────────── */
+    .dos-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    /* ── Tabla de resumen por vendedor (tab ventas) ──────────────── */
+    .tabla-vendedor {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 13px;
+    }
+    .tabla-vendedor th, .tabla-vendedor td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--color-borde);
+      text-align: left;
+    }
+    .tabla-vendedor th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing:.04em; color: var(--color-base-suave); }
+    .tabla-vendedor tr:last-child td { border-bottom: none; }
+
+    /* ── Estado vacío / cargando ─────────────────────────────────── */
+    .estado-vacio {
+      text-align: center;
+      padding: 28px 16px;
+      color: var(--color-base-suave);
+      font-size: 14px;
+    }
+    .cargando {
+      text-align: center;
+      padding: 22px;
+      color: var(--color-base-suave);
+      font-size: 14px;
+    }
+
+    /* ── Insignias de estado ─────────────────────────────────────── */
+    .badge-ok   { background: var(--color-exito-claro);    color: var(--color-exito);    font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; }
+    .badge-warn { background: var(--color-alerta-claro);   color: var(--color-alerta);   font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; }
+    .badge-neu  { background: var(--color-primario-claro); color: var(--color-primario); font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; }
+
+    /* ── Stock por empleado ─────────────────────────────────────── */
+    .empleado-card {
+      background: var(--color-superficie-card);
+      border: 1px solid var(--color-borde);
+      border-radius: var(--radio-lg);
+      box-shadow: var(--sombra-card);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .empleado-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: var(--color-superficie);
+      border-bottom: 1px solid var(--color-borde);
+      cursor: pointer;
+    }
+    .empleado-nombre {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--color-primario-oscuro);
+    }
+    .empleado-meta {
+      font-size: 12px;
+      color: var(--color-base-suave);
+      margin-top: 2px;
+    }
+    .empleado-toggle {
+      font-size: 18px;
+      color: var(--color-base-suave);
+      transition: transform .2s;
+    }
+    .empleado-toggle.abierto { transform: rotate(180deg); }
+    .empleado-body { display: none; padding: 0 18px 14px; }
+    .empleado-body.abierto { display: block; }
+    .empleado-sin-stock {
+      padding: 12px 0;
+      font-size: 13px;
+      color: var(--color-base-suave);
+      font-style: italic;
+    }
+
+    /* ── Sección título ──────────────────────────────────────────── */
+    .seccion-titulo {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--color-base-suave);
+      margin: 0 0 12px;
+    }
+
+    @media (max-width: 520px) {
+      .dos-col { grid-template-columns: 1fr; }
+      .filtros-fila { flex-direction: column; align-items: stretch; }
+      .filtros-fechas-par { flex-direction: column; }
+    }
+
+    /* ── Botón imprimir ──────────────────────────────────────────── */
+    .barra-imprimir {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .barra-imprimir-titulo {
+      font-size: 13px;
+      color: var(--color-base-suave);
+    }
+    .btn-imprimir {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      background: var(--color-superficie);
+      color: var(--color-primario-oscuro);
+      border: 1px solid var(--color-borde);
+      border-radius: var(--radio-md);
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-imprimir:hover { background: var(--color-primario-claro); border-color: var(--color-primario); }
+
+    /* ── CSS de impresión ────────────────────────────────────────── */
+    @media print {
+      /* Ocultar todo lo que no es el reporte */
+      .rep-tabs,
+      .filtros-card,
+      .chips-rango,
+      .metricas-grid,
+      .dos-col,
+      .barra-imprimir,
+      .btn-imprimir,
+      #v-card-vendedores,
+      .empleado-toggle { display: none !important; }
+
+      /* Mostrar solo el panel activo */
+      .rep-panel { display: none !important; }
+      .rep-panel.activo { display: block !important; }
+
+      /* En stock por empleado: expandir todos los cuerpos */
+      .empleado-body { display: block !important; }
+
+      /* Encabezado de impresión */
+      .print-header { display: block !important; }
+
+      /* Estilos de tabla limpios para papel */
+      .card {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin-bottom: 16px !important;
+      }
+      table { width: 100%; border-collapse: collapse; font-size: 11px; }
+      th, td { border: 1px solid #ccc; padding: 5px 7px; }
+      th { background: #f0f0f0; }
+
+      body { font-size: 12px; }
+      .contenedor { padding: 0; }
+    }
+
+    /* Encabezado de impresión — oculto en pantalla */
+    .print-header {
+      display: none;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #333;
+    }
+    .print-header h2 { margin: 0 0 4px; font-size: 16px; }
+    .print-header p  { margin: 0; font-size: 12px; color: #666; }
+  </style>
+
+<div class="contenedor">
+
+  <!-- TABS DE REPORTES -->
+  <div class="rep-tabs">
+    <button class="rep-tab activo" onclick="cambiarTab('ventas', this)">&#128202; Ventas por producto</button>
+    <button class="rep-tab" onclick="cambiarTab('diario', this)">&#128197; Control diario</button>
+    <button class="rep-tab" onclick="cambiarTab('mensual', this)">&#128196; Inventario mensual</button>
+    <button class="rep-tab" onclick="cambiarTab('stock', this)">&#128100; Stock por vendedor</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB 1 — VENTAS POR PRODUCTO
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="rep-panel activo" id="panel-ventas">
+
+    <!-- Filtros -->
+    <div class="filtros-card">
+      <div class="chips-rango" id="chips-ventas">
+        <button class="chip activo" onclick="setRangoVentas(this,'hoy')">Hoy</button>
+        <button class="chip" onclick="setRangoVentas(this,'7d')">Últimos 7 días</button>
+        <button class="chip" onclick="setRangoVentas(this,'30d')">Últimos 30 días</button>
+        <button class="chip" onclick="setRangoVentas(this,'mes')">Este mes</button>
+      </div>
+      <div class="filtros-fila">
+        <div class="filtro-grupo">
+          <span class="filtro-label">Desde</span>
+          <div class="filtros-fechas-par">
+            <input type="date" id="v-desde" onchange="onFechaVentasChange()">
+            <span class="sep-fecha">—</span>
+            <input type="date" id="v-hasta" onchange="onFechaVentasChange()">
+          </div>
+        </div>
+        <div class="filtro-grupo">
+          <span class="filtro-label">Vendedor</span>
+          <select id="v-empleado" onchange="cargarVentas()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="filtro-grupo" style="justify-content:flex-end;">
+          <button class="boton boton-primario" style="padding:9px 18px;font-size:13px;" onclick="cargarVentas()">Generar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas -->
+    <div class="metricas-grid">
+      <div class="metrica">
+        <p class="metrica-label">Total vendido</p>
+        <p class="metrica-valor" id="v-m-total">—</p>
+        <p class="metrica-sub" id="v-m-total-sub"></p>
+      </div>
+      <div class="metrica">
+        <p class="metrica-label">Productos distintos</p>
+        <p class="metrica-valor" id="v-m-productos">—</p>
+        <p class="metrica-sub" id="v-m-productos-sub"></p>
+      </div>
+      <div class="metrica">
+        <p class="metrica-label">Producto top</p>
+        <p class="metrica-valor" id="v-m-top" style="font-size:15px;line-height:1.3;">—</p>
+        <p class="metrica-sub" id="v-m-top-sub"></p>
+      </div>
+    </div>
+
+    <!-- Barras + tabla detalle -->
+    <div class="dos-col">
+      <div class="card" style="margin-bottom:0;">
+        <p class="seccion-titulo">&#127942; Más vendidos (unidades)</p>
+        <div class="barras-wrap" id="v-barras-uds"><div class="cargando">Cargando...</div></div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <p class="seccion-titulo">&#128176; Más vendidos (monto)</p>
+        <div class="barras-wrap" id="v-barras-monto"><div class="cargando">Cargando...</div></div>
+      </div>
+    </div>
+
+    <div style="height:14px;"></div>
+
+    <div class="card" id="v-card-vendedores">
+      <p class="seccion-titulo">&#128100; Resumen por vendedor</p>
+      <div id="v-tabla-vendedores"><div class="cargando">Cargando...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="barra-imprimir">
+        <p class="seccion-titulo" style="margin:0;">&#128203; Detalle de ventas</p>
+        <button class="btn-imprimir" onclick="imprimirReporte('ventas')">&#128438; Imprimir / PDF</button>
+      </div>
+      <div class="print-header" id="print-header-ventas">
+        <h2>Reporte de Ventas por Producto</h2>
+        <p id="print-sub-ventas"></p>
+      </div>
+      <div id="v-tabla-detalle"><div class="cargando">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB 2 — CONTROL DIARIO
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="rep-panel" id="panel-diario">
+
+    <div class="filtros-card">
+      <div class="filtros-fila">
+        <div class="filtro-grupo">
+          <span class="filtro-label">Fecha</span>
+          <input type="date" id="d-fecha">
+        </div>
+        <div class="filtro-grupo" style="justify-content:flex-end;">
+          <button class="boton boton-primario" style="padding:9px 18px;font-size:13px;" onclick="cargarControlDiario()">Generar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas -->
+    <div class="metricas-grid">
+      <div class="metrica">
+        <p class="metrica-label">Ganancia del día</p>
+        <p class="metrica-valor" id="d-m-ganancia">—</p>
+        <p class="metrica-sub" id="d-m-ganancia-sub"></p>
+      </div>
+      <div class="metrica">
+        <p class="metrica-label">Unidades vendidas</p>
+        <p class="metrica-valor" id="d-m-ventas">—</p>
+        <p class="metrica-sub" id="d-m-ventas-sub"></p>
+      </div>
+      <div class="metrica">
+        <p class="metrica-label">Entradas del día</p>
+        <p class="metrica-valor" id="d-m-entradas">—</p>
+        <p class="metrica-sub" id="d-m-entradas-sub"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="barra-imprimir">
+        <p class="seccion-titulo" style="margin:0;">&#128203; Control diario por producto</p>
+        <button class="btn-imprimir" onclick="imprimirReporte('diario')">&#128438; Imprimir / PDF</button>
+      </div>
+      <div class="print-header" id="print-header-diario">
+        <h2>Control Diario de Inventario</h2>
+        <p id="print-sub-diario"></p>
+      </div>
+      <div id="d-tabla"><div class="estado-vacio">Selecciona una fecha y presiona Generar.</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB 3 — INVENTARIO MENSUAL
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="rep-panel" id="panel-mensual">
+
+    <div class="filtros-card">
+      <div class="filtros-fila">
+        <div class="filtro-grupo">
+          <span class="filtro-label">Mes</span>
+          <input type="month" id="m-mes">
+        </div>
+        <div class="filtro-grupo" style="justify-content:flex-end;">
+          <button class="boton boton-primario" style="padding:9px 18px;font-size:13px;" onclick="cargarInventarioMensual()">Generar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas -->
+    <div class="metricas-grid">
+      <div class="metrica">
+        <p class="metrica-label">Inversión en stock</p>
+        <p class="metrica-valor" id="m-m-inversion">—</p>
+        <p class="metrica-sub" id="m-m-inversion-sub"></p>
+      </div>
+      <div class="metrica">
+        <p class="metrica-label">Ganancia realizada</p>
+        <p class="metrica-valor" id="m-m-realizada">—</p>
+        <p class="metrica-sub" id="m-m-realizada-sub"></p>
+      </div>
+      <div class="metrica">
+        <p class="metrica-label">Ganancia potencial</p>
+        <p class="metrica-valor" id="m-m-potencial">—</p>
+        <p class="metrica-sub" id="m-m-potencial-sub"></p>
+      </div>
+      <div class="metrica">
+        <p class="metrica-label">Total entradas</p>
+        <p class="metrica-valor" id="m-m-entradas">—</p>
+        <p class="metrica-sub" id="m-m-entradas-sub"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="barra-imprimir">
+        <p class="seccion-titulo" style="margin:0;">&#128196; Inventario general mensual</p>
+        <button class="btn-imprimir" onclick="imprimirReporte('mensual')">&#128438; Imprimir / PDF</button>
+      </div>
+      <div class="print-header" id="print-header-mensual">
+        <h2>Inventario General Mensual</h2>
+        <p id="print-sub-mensual"></p>
+      </div>
+      <div id="m-tabla"><div class="estado-vacio">Selecciona un mes y presiona Generar.</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB 4 — STOCK POR EMPLEADO
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="rep-panel" id="panel-stock">
+
+    <div class="filtros-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <span style="font-size:13px;color:var(--color-base-suave);">Muestra el stock asignado actual a cada vendedor.</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-imprimir" onclick="imprimirReporte('stock')">&#128438; Imprimir / PDF</button>
+        <button class="boton boton-primario" style="padding:9px 18px;font-size:13px;white-space:nowrap;" onclick="cargarStockPorEmpleado()">&#8635; Actualizar</button>
+      </div>
+    </div>
+
+    <div class="print-header" id="print-header-stock">
+      <h2>Stock Asignado por Vendedor</h2>
+      <p id="print-sub-stock"></p>
+    </div>
+
+    <!-- Métricas -->
+    <div class="metricas-grid">
+      <div class="metrica">
+        <p class="metrica-label">Vendedores activos</p>
+        <p class="metrica-valor" id="s-m-vendedores">—</p>
+      </div>
+      <div class="metrica">
+        <p class="metrica-label">Con stock asignado</p>
+        <p class="metrica-valor" id="s-m-con-stock">—</p>
+      </div>
+      <div class="metrica">
+        <p class="metrica-label">Valor total en campo</p>
+        <p class="metrica-valor" id="s-m-valor">—</p>
+        <p class="metrica-sub" id="s-m-valor-sub"></p>
+      </div>
+    </div>
+
+    <div id="s-lista"><div class="cargando">Cargando...</div></div>
+  </div>
+
+</div><!-- /contenedor -->
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   IMPRIMIR / PDF
+══════════════════════════════════════════════════════════════════════════ */
+function imprimirReporte(tab) {
+  var hoy = new Date().toLocaleDateString('es-SV', { year: 'numeric', month: 'long', day: 'numeric' });
+  var subtitulo = '';
+
+  if (tab === 'ventas') {
+    var desde = document.getElementById('v-desde').value;
+    var hasta  = document.getElementById('v-hasta').value;
+    var empSel = document.getElementById('v-empleado');
+    var empNombre = empSel.value ? empSel.options[empSel.selectedIndex].text : 'Todos los vendedores';
+    subtitulo = 'Período: ' + desde + ' al ' + hasta + '  ·  Vendedor: ' + empNombre + '  ·  Generado: ' + hoy;
+  } else if (tab === 'diario') {
+    subtitulo = 'Fecha: ' + document.getElementById('d-fecha').value + '  ·  Generado: ' + hoy;
+  } else if (tab === 'mensual') {
+    subtitulo = 'Mes: ' + document.getElementById('m-mes').value + '  ·  Generado: ' + hoy;
+  } else if (tab === 'stock') {
+    subtitulo = 'Corte al: ' + hoy;
+  }
+
+  var subEl = document.getElementById('print-sub-' + tab);
+  if (subEl) subEl.textContent = subtitulo;
+
+  window.print();
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UTILIDADES GLOBALES
+══════════════════════════════════════════════════════════════════════════ */
+function fechaISO(d) {
+  return d.getFullYear() + '-' +
+    pad2(d.getMonth() + 1) + '-' +
+    pad2(d.getDate());
+}
+function pad2(n) { return n < 10 ? '0' + n : String(n); }
+function fmt(n) {
+  return Number(n).toLocaleString('es-SV', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function setText(id, v) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = v;
+}
+function setHTML(id, v) {
+  var el = document.getElementById(id);
+  if (el) el.innerHTML = v;
+}
+
+function renderBarras(idContenedor, items, color) {
+  var cont = document.getElementById(idContenedor);
+  if (!cont) return;
+  if (!items || items.length === 0) {
+    cont.innerHTML = '<div class="estado-vacio">Sin datos.</div>';
+    return;
+  }
+  var max = Math.max.apply(null, items.map(function (i) { return i.valor; }));
+  cont.innerHTML = items.slice(0, 7).map(function (item) {
+    var pct = max > 0 ? Math.round(item.valor / max * 100) : 0;
+    return '<div class="barra-fila">' +
+      '<span class="barra-etiqueta" title="' + esc(item.label) + '">' + esc(item.label) + '</span>' +
+      '<div class="barra-pista"><div class="barra-relleno" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+      '<span class="barra-valor">' + esc(item.extra || String(item.valor)) + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function mostrarErrorEnIds(ids, msg) {
+  ids.forEach(function (id) {
+    setHTML(id, '<div class="estado-vacio" style="color:var(--color-alerta);">' + (msg || 'Error al cargar datos.') + '</div>');
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NAVEGACIÓN DE TABS
+══════════════════════════════════════════════════════════════════════════ */
+function cambiarTab(nombre, btn) {
+  document.querySelectorAll('.rep-panel').forEach(function (p) { p.classList.remove('activo'); });
+  document.querySelectorAll('.rep-tab').forEach(function (b) { b.classList.remove('activo'); });
+  document.getElementById('panel-' + nombre).classList.add('activo');
+  btn.classList.add('activo');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   INICIALIZACIÓN
+══════════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function () {
+  var hoy = fechaISO(new Date());
+
+  // Tab Ventas — rango por defecto: hoy
+  document.getElementById('v-desde').value = hoy;
+  document.getElementById('v-hasta').value = hoy;
+
+  // Tab Diario — fecha: hoy
+  document.getElementById('d-fecha').value = hoy;
+
+  // Tab Mensual — mes actual
+  var ahora = new Date();
+  document.getElementById('m-mes').value = ahora.getFullYear() + '-' + pad2(ahora.getMonth() + 1);
+
+  // Cargar empleados y primera carga de ventas
+  cargarEmpleadosSelector();
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TAB 1 — VENTAS POR PRODUCTO
+══════════════════════════════════════════════════════════════════════════ */
+var _empleadosCache = [];
+
+function cargarEmpleadosSelector() {
+  google.script.run
+    .withSuccessHandler(function (empleados) {
+      _empleadosCache = empleados || [];
+      var sel = document.getElementById('v-empleado');
+      empleados.forEach(function (e) {
+        var opt = document.createElement('option');
+        opt.value = e.id_empleado;
+        opt.textContent = e.nombre_empleado;
+        sel.appendChild(opt);
+      });
+      cargarVentas();        // primera carga automática
+      cargarStockPorEmpleado(); // precarga tab stock también
+    })
+    .withFailureHandler(function (err) {
+      console.error('Error cargando empleados:', err);
+      cargarVentas();
+    })
+    .apiListarEmpleadosActivos();
+}
+
+function setRangoVentas(chip, rango) {
+  document.querySelectorAll('#chips-ventas .chip').forEach(function (c) { c.classList.remove('activo'); });
+  chip.classList.add('activo');
+
+  var hoy = new Date();
+  var desde, hasta = fechaISO(hoy);
+
+  if (rango === 'hoy') {
+    desde = fechaISO(hoy);
+  } else if (rango === '7d') {
+    var d7 = new Date(hoy); d7.setDate(d7.getDate() - 6); desde = fechaISO(d7);
+  } else if (rango === '30d') {
+    var d30 = new Date(hoy); d30.setDate(d30.getDate() - 29); desde = fechaISO(d30);
+  } else if (rango === 'mes') {
+    desde = fechaISO(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+  }
+
+  document.getElementById('v-desde').value = desde;
+  document.getElementById('v-hasta').value = hasta;
+  cargarVentas();
+}
+
+function onFechaVentasChange() {
+  document.querySelectorAll('#chips-ventas .chip').forEach(function (c) { c.classList.remove('activo'); });
+  cargarVentas();
+}
+
+function cargarVentas() {
+  var desde     = document.getElementById('v-desde').value;
+  var hasta     = document.getElementById('v-hasta').value;
+  var idEmp     = document.getElementById('v-empleado').value;
+
+  // Poner cargando
+  ['v-barras-uds','v-barras-monto','v-tabla-vendedores','v-tabla-detalle'].forEach(function (id) {
+    setHTML(id, '<div class="cargando">Cargando...</div>');
+  });
+  ['v-m-total','v-m-productos','v-m-top'].forEach(function (id) { setText(id, '—'); });
+  ['v-m-total-sub','v-m-productos-sub','v-m-top-sub'].forEach(function (id) { setText(id, ''); });
+
+  // Llamada 1: ventas por producto (métricas + barras)
+  google.script.run
+    .withSuccessHandler(function (datos) { recibirVentasPorProducto(datos, idEmp); })
+    .withFailureHandler(function (err) {
+      console.error(err);
+      mostrarErrorEnIds(['v-barras-uds','v-barras-monto','v-tabla-vendedores']);
+    })
+    .apiReporteVentasPorProducto(desde, hasta, idEmp || null);
+
+  // Llamada 2: detalle de ventas
+  if (idEmp) {
+    google.script.run
+      .withSuccessHandler(recibirDetalleVentas)
+      .withFailureHandler(function (err) {
+        console.error(err);
+        mostrarErrorEnIds(['v-tabla-detalle']);
+      })
+      .apiListarVentasDeEmpleado(idEmp, desde, hasta);
+  } else {
+    google.script.run
+      .withSuccessHandler(recibirDetalleVentas)
+      .withFailureHandler(function (err) {
+        console.error(err);
+        mostrarErrorEnIds(['v-tabla-detalle']);
+      })
+      .apiListarTodasLasVentas(desde, hasta);
+  }
+}
+
+function recibirVentasPorProducto(datos, idEmpFiltro) {
+  var totalMonto    = 0;
+  var totalUnidades = 0;
+  datos.forEach(function (d) {
+    totalMonto    += d.monto_total;
+    totalUnidades += d.cantidad_total;
+  });
+
+  setText('v-m-total',         '$' + fmt(totalMonto));
+  setText('v-m-total-sub',     totalUnidades + ' unidades totales');
+  setText('v-m-productos',     datos.length);
+  setText('v-m-productos-sub', 'en el período seleccionado');
+
+  if (datos.length > 0) {
+    setText('v-m-top', datos[0].nombre_producto);
+    setText('v-m-top-sub', datos[0].cantidad_total + ' uds · $' + fmt(datos[0].monto_total));
+  } else {
+    setText('v-m-top', '—');
+    setText('v-m-top-sub', '');
+  }
+
+  renderBarras('v-barras-uds', datos.map(function (d) {
+    return { label: d.nombre_producto, valor: d.cantidad_total, extra: d.cantidad_total + ' uds' };
+  }), 'var(--color-primario)');
+
+  renderBarras('v-barras-monto', datos.map(function (d) {
+    return { label: d.nombre_producto, valor: d.monto_total, extra: '$' + fmt(d.monto_total) };
+  }), 'var(--color-secundario)');
+
+  // Tabla resumen por vendedor (solo en vista global)
+  if (!idEmpFiltro) {
+    document.getElementById('v-card-vendedores').style.display = '';
+    // Los datos de vendedores se construirán desde recibirDetalleVentas
+  } else {
+    document.getElementById('v-card-vendedores').style.display = 'none';
+  }
+}
+
+function recibirDetalleVentas(ventas) {
+  // Tabla de detalle
+  var cont = document.getElementById('v-tabla-detalle');
+  if (!ventas || ventas.length === 0) {
+    cont.innerHTML = '<div class="estado-vacio">Sin ventas para los filtros seleccionados.</div>';
+    setHTML('v-tabla-vendedores', '<div class="estado-vacio">Sin datos.</div>');
+    return;
+  }
+
+  var filas = ventas.map(function (v) {
+    var fecha = v.fecha_venta ? v.fecha_venta.slice(0, 10) : '—';
+    var monto = '$' + fmt(Number(v.cantidad_vendida) * Number(v.precio_venta_aplicado));
+    return '<tr>' +
+      '<td style="color:var(--color-base-suave);font-size:12px;">' + esc(fecha) + '</td>' +
+      '<td>' + esc(v.nombre_empleado || '—') + '</td>' +
+      '<td>' + esc(v.nombre_producto || '—') + '</td>' +
+      '<td style="text-align:center;">' + v.cantidad_vendida + '</td>' +
+      '<td style="text-align:right;">' + monto + '</td>' +
+      '</tr>';
+  }).join('');
+
+  cont.innerHTML = '<div style="overflow-x:auto;">' +
+    '<table><thead><tr>' +
+    '<th>Fecha</th><th>Vendedor</th><th>Producto</th>' +
+    '<th style="text-align:center;">Cant.</th><th style="text-align:right;">Monto</th>' +
+    '</tr></thead><tbody>' + filas + '</tbody></table></div>';
+
+  // Resumen por vendedor
+  var porEmp = {};
+  ventas.forEach(function (v) {
+    var nombre = v.nombre_empleado || 'Sin nombre';
+    if (!porEmp[nombre]) porEmp[nombre] = { monto: 0, uds: 0 };
+    porEmp[nombre].monto += Number(v.cantidad_vendida) * Number(v.precio_venta_aplicado);
+    porEmp[nombre].uds   += Number(v.cantidad_vendida);
+  });
+
+  var filaEmp = Object.keys(porEmp).sort(function (a, b) {
+    return porEmp[b].monto - porEmp[a].monto;
+  }).map(function (n) {
+    return '<tr><td>' + esc(n) + '</td>' +
+      '<td style="text-align:center;">' + porEmp[n].uds + ' uds</td>' +
+      '<td style="text-align:right;">$' + fmt(porEmp[n].monto) + '</td></tr>';
+  }).join('');
+
+  setHTML('v-tabla-vendedores',
+    '<table class="tabla-vendedor">' +
+    '<thead><tr><th>Vendedor</th><th style="text-align:center;">Unidades</th><th style="text-align:right;">Monto</th></tr></thead>' +
+    '<tbody>' + filaEmp + '</tbody></table>'
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TAB 2 — CONTROL DIARIO
+══════════════════════════════════════════════════════════════════════════ */
+function cargarControlDiario() {
+  var fecha = document.getElementById('d-fecha').value;
+  if (!fecha) {
+    alert('Selecciona una fecha.');
+    return;
+  }
+  setHTML('d-tabla', '<div class="cargando">Cargando...</div>');
+  ['d-m-ganancia','d-m-ventas','d-m-entradas'].forEach(function (id) { setText(id, '—'); });
+  ['d-m-ganancia-sub','d-m-ventas-sub','d-m-entradas-sub'].forEach(function (id) { setText(id, ''); });
+
+  google.script.run
+    .withSuccessHandler(recibirControlDiario)
+    .withFailureHandler(function (err) {
+      console.error(err);
+      mostrarErrorEnIds(['d-tabla']);
+    })
+    .apiReporteControlDiario(fecha);
+}
+
+function recibirControlDiario(datos) {
+  if (!datos || datos.length === 0) {
+    setHTML('d-tabla', '<div class="estado-vacio">Sin datos para esta fecha.</div>');
+    return;
+  }
+
+  var totalGanancia  = 0;
+  var totalVentas    = 0;
+  var totalEntradas  = 0;
+  datos.forEach(function (d) {
+    totalGanancia += d.ganancia_dia;
+    totalVentas   += d.ventas;
+    totalEntradas += d.entradas;
+  });
+
+  setText('d-m-ganancia',      '$' + fmt(totalGanancia));
+  setText('d-m-ganancia-sub',  'margen sobre precio de costo');
+  setText('d-m-ventas',        totalVentas);
+  setText('d-m-ventas-sub',    'unidades vendidas en el día');
+  setText('d-m-entradas',      totalEntradas);
+  setText('d-m-entradas-sub',  'unidades ingresadas de proveedor');
+
+  var filas = datos.map(function (d) {
+    var cierre   = Number(d.existencias_cierre);
+    var badgeClass = cierre > 5 ? 'badge-ok' : cierre > 0 ? 'badge-warn' : 'badge-warn';
+    var badgeText  = cierre > 5 ? 'OK'        : cierre > 0 ? 'Stock bajo' : 'Agotado';
+    return '<tr>' +
+      '<td><strong>' + esc(d.nombre_producto) + '</strong><br>' +
+      '<span style="font-size:11px;color:var(--color-base-suave);">' + esc(d.codigo_producto) + ' · ' + esc(d.unidad_medida || '') + '</span></td>' +
+      '<td style="text-align:center;">' + d.existencia_inicial + '</td>' +
+      '<td style="text-align:center;color:var(--color-exito);">+' + d.entradas + '</td>' +
+      '<td style="text-align:center;color:var(--color-secundario);">−' + d.ventas + '</td>' +
+      '<td style="text-align:center;"><strong>' + cierre + '</strong></td>' +
+      '<td style="text-align:center;"><span class="' + badgeClass + '">' + badgeText + '</span></td>' +
+      '<td style="text-align:right;">$' + fmt(d.ganancia_dia) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  setHTML('d-tabla',
+    '<div style="overflow-x:auto;">' +
+    '<table><thead><tr>' +
+    '<th>Producto</th>' +
+    '<th style="text-align:center;">Exist. inicial</th>' +
+    '<th style="text-align:center;">Entradas</th>' +
+    '<th style="text-align:center;">Ventas</th>' +
+    '<th style="text-align:center;">Cierre</th>' +
+    '<th style="text-align:center;">Estado</th>' +
+    '<th style="text-align:right;">Ganancia</th>' +
+    '</tr></thead><tbody>' + filas + '</tbody></table></div>'
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TAB 3 — INVENTARIO MENSUAL
+══════════════════════════════════════════════════════════════════════════ */
+function cargarInventarioMensual() {
+  var mes = document.getElementById('m-mes').value; // 'YYYY-MM'
+  if (!mes) {
+    alert('Selecciona un mes.');
+    return;
+  }
+  var partes = mes.split('-');
+  var anio   = Number(partes[0]);
+  var mesNum = Number(partes[1]);
+
+  setHTML('m-tabla', '<div class="cargando">Cargando...</div>');
+  ['m-m-inversion','m-m-realizada','m-m-potencial','m-m-entradas'].forEach(function (id) { setText(id, '—'); });
+  ['m-m-inversion-sub','m-m-realizada-sub','m-m-potencial-sub','m-m-entradas-sub'].forEach(function (id) { setText(id, ''); });
+
+  google.script.run
+    .withSuccessHandler(recibirInventarioMensual)
+    .withFailureHandler(function (err) {
+      console.error(err);
+      mostrarErrorEnIds(['m-tabla']);
+    })
+    .apiReporteInventarioMensual(anio, mesNum);
+}
+
+function recibirInventarioMensual(datos) {
+  if (!datos || datos.length === 0) {
+    setHTML('m-tabla', '<div class="estado-vacio">Sin datos para este mes.</div>');
+    return;
+  }
+
+  var totalInversion   = 0;
+  var totalRealizada   = 0;
+  var totalPotencial   = 0;
+  var totalEntradas    = 0;
+  datos.forEach(function (d) {
+    totalInversion += d.inversion;
+    totalRealizada += d.ganancia_realizada;
+    totalPotencial += d.ganancia_potencial;
+    totalEntradas  += d.entradas;
+  });
+
+  setText('m-m-inversion',      '$' + fmt(totalInversion));
+  setText('m-m-inversion-sub',  'al precio de costo actual');
+  setText('m-m-realizada',      '$' + fmt(totalRealizada));
+  setText('m-m-realizada-sub',  'ganancia por ventas del mes');
+  setText('m-m-potencial',      '$' + fmt(totalPotencial));
+  setText('m-m-potencial-sub',  'si se vende todo el stock actual');
+  setText('m-m-entradas',       totalEntradas);
+  setText('m-m-entradas-sub',   'unidades ingresadas de proveedor');
+
+  var filas = datos.map(function (d) {
+    return '<tr>' +
+      '<td><strong>' + esc(d.nombre_producto) + '</strong><br>' +
+      '<span style="font-size:11px;color:var(--color-base-suave);">' + esc(d.codigo_producto) + '</span></td>' +
+      '<td style="text-align:center;">' + esc(d.unidad_medida || '—') + '</td>' +
+      '<td style="text-align:center;color:var(--color-exito);">+' + d.entradas + '</td>' +
+      '<td style="text-align:center;color:var(--color-secundario);">−' + d.salidas + '</td>' +
+      '<td style="text-align:center;"><strong>' + d.existencias + '</strong></td>' +
+      '<td style="text-align:right;">$' + fmt(d.inversion) + '</td>' +
+      '<td style="text-align:right;color:var(--color-exito);">$' + fmt(d.ganancia_realizada) + '</td>' +
+      '<td style="text-align:right;color:var(--color-base-suave);">$' + fmt(d.ganancia_potencial) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  setHTML('m-tabla',
+    '<div style="overflow-x:auto;">' +
+    '<table><thead><tr>' +
+    '<th>Producto</th>' +
+    '<th style="text-align:center;">Unidad</th>' +
+    '<th style="text-align:center;">Entradas</th>' +
+    '<th style="text-align:center;">Salidas</th>' +
+    '<th style="text-align:center;">Existencias</th>' +
+    '<th style="text-align:right;">Inversión</th>' +
+    '<th style="text-align:right;">G. realizada</th>' +
+    '<th style="text-align:right;">G. potencial</th>' +
+    '</tr></thead><tbody>' + filas + '</tbody></table></div>'
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TAB 4 — STOCK POR EMPLEADO
+══════════════════════════════════════════════════════════════════════════ */
+function cargarStockPorEmpleado() {
+  setHTML('s-lista', '<div class="cargando">Cargando...</div>');
+  ['s-m-vendedores','s-m-con-stock','s-m-valor'].forEach(function (id) { setText(id, '—'); });
+  setText('s-m-valor-sub', '');
+
+  google.script.run
+    .withSuccessHandler(recibirStockPorEmpleado)
+    .withFailureHandler(function (err) {
+      console.error(err);
+      mostrarErrorEnIds(['s-lista']);
+    })
+    .apiReporteStockPorEmpleado();
+}
+
+function recibirStockPorEmpleado(datos) {
+  if (!datos || datos.length === 0) {
+    setHTML('s-lista', '<div class="estado-vacio">Sin empleados activos.</div>');
+    return;
+  }
+
+  var conStock    = 0;
+  var valorTotal  = 0;
+  datos.forEach(function (d) {
+    if (d.total_productos > 0) conStock++;
+    valorTotal += d.valor_total_asignado;
+  });
+
+  setText('s-m-vendedores',  datos.length);
+  setText('s-m-con-stock',   conStock);
+  setText('s-m-valor',       '$' + fmt(valorTotal));
+  setText('s-m-valor-sub',   'al precio de venta');
+
+  var html = datos.map(function (empleado, idx) {
+    var idPanel  = 'emp-body-' + idx;
+    var idToggle = 'emp-tog-' + idx;
+
+    var productosHtml;
+    if (!empleado.productos || empleado.productos.length === 0) {
+      productosHtml = '<div class="empleado-sin-stock">Sin stock asignado actualmente.</div>';
+    } else {
+      var filas = empleado.productos.map(function (p) {
+        var val = '$' + fmt(p.cantidad_disponible * Number(p.precio_venta));
+        return '<tr>' +
+          '<td>' + esc(p.nombre_producto || '—') + '</td>' +
+          '<td style="text-align:center;">' + p.cantidad_disponible + '</td>' +
+          '<td style="text-align:right;">$' + fmt(p.precio_venta) + '</td>' +
+          '<td style="text-align:right;">' + val + '</td>' +
+          '</tr>';
+      }).join('');
+      productosHtml = '<div style="overflow-x:auto;margin-top:10px;">' +
+        '<table><thead><tr>' +
+        '<th>Producto</th>' +
+        '<th style="text-align:center;">Cant. asignada</th>' +
+        '<th style="text-align:right;">P. venta</th>' +
+        '<th style="text-align:right;">Valor asignado</th>' +
+        '</tr></thead><tbody>' + filas + '</tbody></table></div>';
+    }
+
+    return '<div class="empleado-card">' +
+      '<div class="empleado-header" onclick="toggleEmpleado(\'' + idPanel + '\',\'' + idToggle + '\')">' +
+        '<div>' +
+          '<div class="empleado-nombre">&#128100; ' + esc(empleado.nombre_empleado) + '</div>' +
+          '<div class="empleado-meta">' +
+            empleado.total_productos + ' producto(s) · $' + fmt(empleado.valor_total_asignado) + ' asignado' +
+          '</div>' +
+        '</div>' +
+        '<span class="empleado-toggle" id="' + idToggle + '">&#8964;</span>' +
+      '</div>' +
+      '<div class="empleado-body" id="' + idPanel + '">' + productosHtml + '</div>' +
+    '</div>';
+  }).join('');
+
+  setHTML('s-lista', html);
+}
+
+function toggleEmpleado(idPanel, idToggle) {
+  var body   = document.getElementById(idPanel);
+  var toggle = document.getElementById(idToggle);
+  if (!body) return;
+  var abierto = body.classList.contains('abierto');
+  body.classList.toggle('abierto', !abierto);
+  toggle.classList.toggle('abierto', !abierto);
+}
+</script>
