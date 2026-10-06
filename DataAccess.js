@@ -9,7 +9,8 @@ const SHEET_NAMES = {
   EMPLEADOS: 'Empleados',
   MOVIMIENTOS: 'Movimientos_Stock',
   STOCK_EMPLEADO: 'Stock_Empleado',
-  VENTAS: 'Ventas'
+  VENTAS: 'Ventas',
+  PROVEEDORES: 'Proveedores'
 };
 
 /**
@@ -30,6 +31,24 @@ function getSheet_(sheetName) {
 function getHeaders_(sheet) {
   const lastCol = sheet.getLastColumn();
   return sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+}
+
+/**
+ * Indica si una hoja tiene una columna con ese encabezado.
+ */
+function columnaExiste_(sheetName, columna) {
+  return getHeaders_(getSheet_(sheetName)).indexOf(columna) !== -1;
+}
+
+/**
+ * Lanza un error claro si falta una columna. Evita que insertRecord_/updateRecord_
+ * ignoren en silencio un campo cuyo encabezado no existe en la hoja.
+ */
+function exigirColumna_(sheetName, columna) {
+  if (!columnaExiste_(sheetName, columna)) {
+    throw new Error('Falta la columna "' + columna + '" en la hoja "' + sheetName +
+      '". Ejecuta migrarProveedores() una vez desde el editor de Apps Script.');
+  }
 }
 
 /**

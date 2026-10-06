@@ -18,6 +18,7 @@
     .nav-admin button {
       flex-shrink: 0;
       padding: 9px 16px;
+      min-height: 40px;
       font-size: 14px;
       font-weight: 600;
       font-family: inherit;
@@ -26,13 +27,31 @@
       background: var(--color-superficie-card);
       color: var(--color-base-suave);
       cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .nav-admin button:hover:not(.activo) {
+      border-color: var(--color-primario);
+      color: var(--color-primario-oscuro);
     }
 
-    .nav-admin button.activo {
-      background: var(--color-primario);
-      border-color: var(--color-primario);
-      color: #FFFFFF;
+    .btn-salir-admin {
+      background: #FFFFFF;
+      border: 1px solid #FFFFFF;
+      color: var(--color-relleno);
     }
+    .btn-salir-admin:hover { background: #E4EDEF; }
+
+    #zonaMensajeGlobal { scroll-margin-top: 12px; }
+
+    .nav-admin button.activo {
+      background: var(--color-relleno);
+      border-color: var(--color-relleno);
+      color: var(--color-sobre-relleno);
+    }
+
+    /* El panel de reportes necesita más ancho (submenú lateral + tablas) */
+    .contenedor { transition: max-width .2s ease; }
+    .contenedor.ancho { max-width: 1120px; }
 
     .seccion-admin { display: none; }
     .seccion-admin.activa { display: block; }
@@ -46,13 +65,17 @@
         <h1>Panel de Administrador</h1>
         <p class="subtitulo">Control de Inventario</p>
       </div>
-      <button class="boton" style="width:auto; padding:8px 14px; font-size:13px; background:transparent; border:1px solid #FFFFFF; color:#FFFFFF;" onclick="irAlInicio_()">
-        Salir
-      </button>
+      <div class="encabezado-acciones">
+        <button type="button" class="btn-tema" data-tema-boton onclick="alternarTema()" aria-label="Cambiar tema">&#9790;</button>
+        <button class="boton boton-sm btn-salir-admin" onclick="irAlInicio_()">
+          Salir
+        </button>
+      </div>
     </div>
 
     <nav class="nav-admin">
       <button class="activo" data-seccion="productos" onclick="cambiarSeccion_('productos')">Productos</button>
+      <button data-seccion="proveedores" onclick="cambiarSeccion_('proveedores')">Proveedores</button>
       <button data-seccion="empleados" onclick="cambiarSeccion_('empleados')">Empleados</button>
       <button data-seccion="movimientos" onclick="cambiarSeccion_('movimientos')">Movimientos</button>
       <button data-seccion="reportes" onclick="cambiarSeccion_('reportes')">Reportes</button>
@@ -62,6 +85,10 @@
 
     <div id="seccionProductos" class="seccion-admin activa">
       <?!= include('AdminProductos'); ?>
+    </div>
+
+    <div id="seccionProveedores" class="seccion-admin">
+      <?!= include('AdminProveedores'); ?>
     </div>
 
     <div id="seccionEmpleados" class="seccion-admin">
@@ -87,7 +114,7 @@
         secciones[i].classList.remove('activa');
       }
 
-      var botones = document.querySelectorAll('.nav-admin button');
+      var botones = document.querySelectorAll('.nav-admin button[data-seccion]');
       for (var j = 0; j < botones.length; j++) {
         botones[j].classList.remove('activo');
       }
@@ -98,10 +125,12 @@
       if (botonActivo) botonActivo.classList.add('activo');
 
       document.getElementById('zonaMensajeGlobal').innerHTML = '';
+      document.querySelector('.contenedor').classList.toggle('ancho', nombreSeccion === 'reportes');
 
       // Cada módulo expone su propia función de "recarga al entrar",
       // definida en su respectivo archivo parcial.
       if (nombreSeccion === 'productos' && typeof cargarProductos_ === 'function') cargarProductos_();
+      if (nombreSeccion === 'proveedores' && typeof cargarProveedores_ === 'function') cargarProveedores_();
       if (nombreSeccion === 'empleados' && typeof cargarEmpleados_ === 'function') cargarEmpleados_();
       if (nombreSeccion === 'movimientos' && typeof inicializarMovimientos_ === 'function') inicializarMovimientos_();
       if (nombreSeccion === 'reportes' && typeof inicializarReportes_ === 'function') inicializarReportes_();
@@ -114,25 +143,49 @@
 function irAlInicio_() {
   window.top.location.href = URL_BASE;
 }
-    function mostrarMensajeGlobal_(tipo, texto) {
-      var clase = tipo === 'error' ? 'mensaje-error' : 'mensaje-exito';
-      document.getElementById('zonaMensajeGlobal').innerHTML =
-        '<div class="mensaje ' + clase + '">' + texto + '</div>';
+    // Escapa texto antes de insertarlo como HTML (nombres, códigos, correos, etc.)
+    function esc_(valor) {
+      return String(valor == null ? '' : valor)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
+    var temporizadorMensaje_ = null;
+
+    function mostrarMensajeGlobal_(tipo, texto) {
+      var zona = document.getElementById('zonaMensajeGlobal');
+      var div = document.createElement('div');
+      div.className = 'mensaje ' + (tipo === 'error' ? 'mensaje-error' : 'mensaje-exito');
+      div.setAttribute('role', tipo === 'error' ? 'alert' : 'status');
+      div.textContent = texto;
+
+      zona.innerHTML = '';
+      zona.appendChild(div);
+      zona.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      clearTimeout(temporizadorMensaje_);
       if (tipo === 'exito') {
-        setTimeout(function () {
-          document.getElementById('zonaMensajeGlobal').innerHTML = '';
-        }, 3500);
+        temporizadorMensaje_ = setTimeout(function () { zona.innerHTML = ''; }, 3500);
       }
     }
 
-console.log('Estado de carga del documento:', document.readyState);
+    // Enter dentro de un campo de formulario dispara el botón principal de su tarjeta
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' || e.target.tagName !== 'INPUT' || e.target.type === 'checkbox') return;
+      var card = e.target.closest('.card');
+      var boton = card && card.querySelector('.boton-primario');
+      if (boton && !boton.disabled) {
+        e.preventDefault();
+        boton.click();
+      }
+    });
 
-document.addEventListener('DOMContentLoaded', function () {
-  console.log('DOMContentLoaded se disparó');
-  console.log('typeof cargarProductos_ al momento del evento:', typeof cargarProductos_);
-  if (typeof cargarProductos_ === 'function') cargarProductos_();
-});
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof cargarProductos_ === 'function') cargarProductos_();
+    });
   </script>
 </body>
 </html>

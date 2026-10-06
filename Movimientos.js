@@ -18,11 +18,16 @@ const TIPO_MOVIMIENTO = {
  * 1) INGRESO DE PROVEEDOR
  * Suma cantidad al inventario general (stock_total) y registra el movimiento.
  *
- * datos esperado: { id_producto, cantidad, usuario_registro, observaciones }
+ * datos esperado: { id_producto, id_proveedor, cantidad, usuario_registro, observaciones }
+ * id_proveedor es obligatorio: queda registrado en el movimiento.
  */
 function registrarIngresoProveedor(datos) {
   validarCantidadPositiva_(datos.cantidad);
   const producto = obtenerProductoPorId(datos.id_producto); // lanza error si no existe
+
+  // Se valida todo ANTES de tocar el stock, para no dejar un ingreso a medias
+  exigirColumna_(SHEET_NAMES.MOVIMIENTOS, 'id_proveedor');
+  const proveedor = exigirProveedorValido_(datos.id_proveedor);
 
   ajustarStockTotal_(producto.id_producto, Number(datos.cantidad));
 
@@ -31,6 +36,7 @@ function registrarIngresoProveedor(datos) {
     tipo_movimiento: TIPO_MOVIMIENTO.INGRESO_PROVEEDOR,
     cantidad: Number(datos.cantidad),
     id_empleado: '', // no aplica en este tipo
+    id_proveedor: proveedor.id_proveedor,
     usuario_registro: datos.usuario_registro || '',
     observaciones: datos.observaciones || ''
   });
@@ -153,6 +159,7 @@ function registrarMovimiento_(datos) {
     cantidad: datos.cantidad,
     fecha_movimiento: new Date(),
     id_empleado: datos.id_empleado || '',
+    id_proveedor: datos.id_proveedor || '',
     usuario_registro: datos.usuario_registro || '',
     observaciones: datos.observaciones || ''
   };

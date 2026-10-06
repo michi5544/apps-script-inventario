@@ -3,36 +3,38 @@
 
   <input type="hidden" id="empleadoIdEnEdicion" value="">
 
-  <div class="campo">
-    <label for="empNombre">Nombre del empleado</label>
-    <input type="text" id="empNombre" placeholder="Ej. Carlos Pérez">
+  <div class="fila-campos">
+    <div class="campo">
+      <label for="empNombre">Nombre del empleado <span class="req">*</span></label>
+      <input type="text" id="empNombre" placeholder="Ej. Carlos Pérez" autocomplete="off" maxlength="80">
+    </div>
+
+    <div class="campo">
+      <label for="empCorreo">Correo (opcional)</label>
+      <input type="email" id="empCorreo" placeholder="Ej. carlos@correo.com" autocomplete="off" inputmode="email">
+    </div>
   </div>
 
-  <div class="campo">
-    <label for="empCorreo">Correo (opcional)</label>
-    <input type="email" id="empCorreo" placeholder="Ej. carlos@correo.com">
-  </div>
-
-  <div style="display:flex; gap:10px;">
+  <div class="acciones-form">
     <button class="boton boton-primario" id="btnGuardarEmpleado" onclick="guardarEmpleado_()">
       Guardar empleado
     </button>
-    <button class="boton boton-fantasma oculto" id="btnCancelarEdicionEmpleado" style="width:auto; padding:12px 18px;" onclick="cancelarEdicionEmpleado_()">
+    <button class="boton boton-fantasma boton-auto oculto" id="btnCancelarEdicionEmpleado" onclick="cancelarEdicionEmpleado_()">
       Cancelar
     </button>
   </div>
 </div>
 
 <div class="card">
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-    <h2 style="margin:0;">Empleados</h2>
-    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:400; margin:0;">
-      <input type="checkbox" id="checkVerInactivosEmpleados" onchange="cargarEmpleados_()" style="width:auto;">
+  <div class="encabezado-lista">
+    <h2>Empleados</h2>
+    <label class="check-inline">
+      <input type="checkbox" id="checkVerInactivosEmpleados" onchange="cargarEmpleados_()">
       Ver inactivos
     </label>
   </div>
   <div id="tablaEmpleados">
-    <p style="font-size:13px; color:var(--color-base-suave);">Cargando...</p>
+    <p class="texto-vacio">Cargando...</p>
   </div>
 </div>
 
@@ -42,7 +44,7 @@
   function cargarEmpleados_() {
     var verInactivos = document.getElementById('checkVerInactivosEmpleados').checked;
     var contenedor = document.getElementById('tablaEmpleados');
-    contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-base-suave);">Cargando...</p>';
+    contenedor.innerHTML = '<p class="texto-vacio">Cargando...</p>';
 
     var llamada = google.script.run
       .withSuccessHandler(function (empleados) {
@@ -50,7 +52,7 @@
         poblarTablaEmpleados_(empleadosCache_);
       })
       .withFailureHandler(function (error) {
-        contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-alerta);">Error al cargar: ' + error.message + '</p>';
+        contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-alerta);">Error al cargar: ' + esc_(error.message) + '</p>';
       });
 
     if (verInactivos) {
@@ -64,11 +66,11 @@
     var contenedor = document.getElementById('tablaEmpleados');
 
     if (empleados.length === 0) {
-      contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-base-suave);">No hay empleados registrados.</p>';
+      contenedor.innerHTML = '<p class="texto-vacio">No hay empleados registrados.</p>';
       return;
     }
 
-    var html = '<table><thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th></th></tr></thead><tbody>';
+    var html = '<div class="tabla-scroll"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th></th></tr></thead><tbody>';
 
     empleados.forEach(function (e) {
       var insigniaEstado = e.activo
@@ -76,21 +78,21 @@
         : '<span class="insignia insignia-alerta">Inactivo</span>';
 
       var botonToggle = e.activo
-        ? '<button class="boton boton-fantasma" style="width:auto; padding:6px 10px; font-size:12px;" onclick="confirmarDesactivarEmpleado_(' + e.id_empleado + ')">Desactivar</button>'
-        : '<button class="boton boton-secundario" style="width:auto; padding:6px 10px; font-size:12px;" onclick="reactivarEmpleado_(' + e.id_empleado + ')">Reactivar</button>';
+        ? '<button class="boton boton-peligro boton-sm" onclick="confirmarDesactivarEmpleado_(' + e.id_empleado + ')">Desactivar</button>'
+        : '<button class="boton boton-secundario boton-sm" onclick="reactivarEmpleado_(' + e.id_empleado + ')">Reactivar</button>';
 
       html += '<tr>' +
-        '<td>' + e.nombre_empleado + '</td>' +
-        '<td>' + (e.correo || '<span style="color:var(--color-base-suave);">—</span>') + '</td>' +
+        '<td>' + esc_(e.nombre_empleado) + '</td>' +
+        '<td>' + (esc_(e.correo) || '<span style="color:var(--color-base-suave);">—</span>') + '</td>' +
         '<td>' + insigniaEstado + '</td>' +
-        '<td style="white-space:nowrap;">' +
-          '<button class="boton boton-fantasma" style="width:auto; padding:6px 10px; font-size:12px; margin-right:4px;" onclick="editarEmpleadoDesdeTabla_(' + e.id_empleado + ')">Editar</button>' +
+        '<td><div class="acciones-fila">' +
+          '<button class="boton boton-fantasma boton-sm" onclick="editarEmpleadoDesdeTabla_(' + e.id_empleado + ')">Editar</button>' +
           botonToggle +
-        '</td>' +
+        '</div></td>' +
         '</tr>';
     });
 
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     contenedor.innerHTML = html;
   }
 
@@ -104,6 +106,11 @@
 
     if (!datos.nombre_empleado) {
       mostrarMensajeGlobal_('error', 'El nombre del empleado es obligatorio.');
+      return;
+    }
+
+    if (datos.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.correo)) {
+      mostrarMensajeGlobal_('error', 'El correo no tiene un formato válido.');
       return;
     }
 

@@ -24,6 +24,19 @@ function obtenerCorreosAdmin() {
 }
 
 /**
+ * Verifica en el servidor que quien invoca la función es administrador.
+ * El frontend (google.script.run) puede ser llamado por cualquiera que conozca
+ * la URL, así que cada función de administrador debe empezar con esta llamada.
+ * Si el correo no se puede determinar o no está autorizado, lanza un error.
+ */
+function exigirAdmin_() {
+  const correo = Session.getActiveUser().getEmail();
+  if (!correo || obtenerCorreosAdmin().indexOf(correo) === -1) {
+    throw new Error('Acceso denegado: esta acción es solo para el administrador.');
+  }
+}
+
+/**
  * Punto de entrada único de la Web App.
  * Parámetros de URL soportados (opcionales):
  *   ?vista=login            (default) pantalla de selección de rol
@@ -118,174 +131,182 @@ function obtenerListaEmpleadosParaLogin() {
   });
 }
 
-/* ───────────────────── Funciones puente: Productos ───────────────────── */
+/* ───────────────────── Funciones puente: Productos (admin) ───────────────────── */
 
 function apiListarProductosActivos() {
+  exigirAdmin_();
   return listarProductosActivos();
 }
 
 function apiListarTodosLosProductos() {
+  exigirAdmin_();
   return listarTodosLosProductos();
 }
 
 function apiCrearProducto(datos) {
+  exigirAdmin_();
   return crearProducto(datos);
 }
 
 function apiEditarProducto(idProducto, cambios) {
+  exigirAdmin_();
   return editarProducto(idProducto, cambios);
 }
 
 function apiDesactivarProducto(idProducto) {
+  exigirAdmin_();
   return desactivarProducto(idProducto);
 }
 
 function apiReactivarProducto(idProducto) {
+  exigirAdmin_();
   return reactivarProducto(idProducto);
 }
 
-/* ───────────────────── Funciones puente: Empleados ───────────────────── */
+/* ───────────────────── Funciones puente: Proveedores (admin) ───────────────────── */
+
+function apiListarProveedoresActivos() {
+  exigirAdmin_();
+  return listarProveedoresActivos();
+}
+
+function apiListarTodosLosProveedores() {
+  exigirAdmin_();
+  return listarTodosLosProveedores();
+}
+
+function apiCrearProveedor(datos) {
+  exigirAdmin_();
+  return crearProveedor(datos);
+}
+
+function apiEditarProveedor(idProveedor, cambios) {
+  exigirAdmin_();
+  return editarProveedor(idProveedor, cambios);
+}
+
+function apiDesactivarProveedor(idProveedor) {
+  exigirAdmin_();
+  return desactivarProveedor(idProveedor);
+}
+
+function apiReactivarProveedor(idProveedor) {
+  exigirAdmin_();
+  return reactivarProveedor(idProveedor);
+}
+
+/* ───────────────────── Funciones puente: Empleados (admin) ───────────────────── */
 
 function apiListarEmpleadosActivos() {
+  exigirAdmin_();
   return listarEmpleadosActivos();
 }
 
 function apiListarTodosLosEmpleados() {
+  exigirAdmin_();
   return listarTodosLosEmpleados();
 }
 
 function apiCrearEmpleado(datos) {
+  exigirAdmin_();
   return crearEmpleado(datos);
 }
 
 function apiEditarEmpleado(idEmpleado, cambios) {
+  exigirAdmin_();
   return editarEmpleado(idEmpleado, cambios);
 }
 
 function apiDesactivarEmpleado(idEmpleado) {
+  exigirAdmin_();
   return desactivarEmpleado(idEmpleado);
 }
 
 function apiReactivarEmpleado(idEmpleado) {
+  exigirAdmin_();
   return reactivarEmpleado(idEmpleado);
 }
 
-/* ───────────────────── Funciones puente: Movimientos ───────────────────── */
+/* ───────────────────── Funciones puente: Movimientos (admin) ───────────────────── */
 
 function apiRegistrarIngresoProveedor(datos) {
+  exigirAdmin_();
   return registrarIngresoProveedor(datos);
 }
 
 function apiRegistrarAsignacionEmpleado(datos) {
+  exigirAdmin_();
   return registrarAsignacionEmpleado(datos);
 }
 
 function apiRegistrarDevolucionEmpleado(datos) {
+  exigirAdmin_();
   return registrarDevolucionEmpleado(datos);
 }
 
 function apiRegistrarDevolucionCliente(datos) {
+  exigirAdmin_();
   return registrarDevolucionCliente(datos);
 }
 
-function apiListarStockDeEmpleado(idEmpleado) {
-  return listarStockDeEmpleado(idEmpleado);
-}
-
-/* ───────────────────── Funciones puente: Ventas ───────────────────── */
+/* ───────────────────── Funciones puente: Ventas y reportes (admin) ───────────────────── */
 
 function apiRegistrarVenta(datos) {
-  return registrarVenta(datos);
+  exigirAdmin_();
+  return registrarVenta(datos.id_empleado, datos.id_producto, datos.cantidad_vendida, datos.precio_venta_aplicado);
+}
+
+function apiListarTodasLasVentas(fechaDesde, fechaHasta) {
+  exigirAdmin_();
+  return listarTodasLasVentas(fechaDesde, fechaHasta);
+}
+
+function apiCalcularTotalVendidoPorEmpleado(idEmpleado, fechaDesde, fechaHasta) {
+  exigirAdmin_();
+  return calcularTotalVendidoPorEmpleado(idEmpleado, fechaDesde, fechaHasta);
+}
+
+function apiReporteControlDiario(fecha) {
+  exigirAdmin_();
+  return reporteControlDiario(fecha);
+}
+
+function apiReporteInventarioMensual(anio, mes) {
+  exigirAdmin_();
+  return reporteInventarioMensual(anio, mes);
+}
+
+function apiReporteVentasPorProducto(fechaDesde, fechaHasta, idEmpleado) {
+  exigirAdmin_();
+  return reporteVentasPorProducto(fechaDesde, fechaHasta, idEmpleado);
+}
+
+function apiReporteDashboardInventario() {
+  exigirAdmin_();
+  return reporteDashboardInventario();
+}
+
+function apiReporteStockPorEmpleado() {
+  exigirAdmin_();
+  return reporteStockPorEmpleado();
+}
+
+/* ───────────────────── Funciones puente: vista de empleado ─────────────────────
+   Las usa el formulario del empleado (sin login por contraseña), por eso no
+   exigen administrador. Solo operan sobre un empleado activo. */
+
+function apiListarStockDeEmpleado(idEmpleado) {
+  return listarStockDeEmpleado(idEmpleado);
 }
 
 function apiListarVentasDeEmpleado(idEmpleado, fechaDesde, fechaHasta) {
   return listarVentasDeEmpleado(idEmpleado, fechaDesde, fechaHasta);
 }
 
-function apiListarTodasLasVentas(fechaDesde, fechaHasta) {
-  return listarTodasLasVentas(fechaDesde, fechaHasta);
-}
-
-function apiCalcularTotalVendidoPorEmpleado(idEmpleado, fechaDesde, fechaHasta) {
-  return calcularTotalVendidoPorEmpleado(idEmpleado, fechaDesde, fechaHasta);
-}
-
-/* ───────────────────── Funciones puente: Reportes ───────────────────── */
-
-function apiReporteControlDiario(fecha) {
-  return reporteControlDiario(fecha);
-}
-
-function apiReporteInventarioMensual(anio, mes) {
-  return reporteInventarioMensual(anio, mes);
-}
-
-function apiReporteVentasPorProducto(fechaDesde, fechaHasta, idEmpleado) {
-  return reporteVentasPorProducto(fechaDesde, fechaHasta, idEmpleado);
-}
-
-function apiReporteStockPorEmpleado() {
-  return reporteStockPorEmpleado();
-}
-
-function apiPruebaSimple() {
-  return [1, 2, 3];
-}
-
-function apiPruebaProductosSinFecha() {
-  var productos = listarProductosActivos();
-  return productos.map(function (p) {
-    return {
-      id_producto: p.id_producto,
-      nombre_producto: p.nombre_producto
-      // sin fecha_creacion, sin activo, sin _rowIndex
-    };
-  });
-}
-
-
-function apiReporteVentasPorProducto(fechaDesde, fechaHasta, idEmpleado) {
-  return reporteVentasPorProducto(fechaDesde, fechaHasta, idEmpleado);
-}
-
-function apiReporteControlDiario(fecha) {
-  return reporteControlDiario(fecha);
-}
-
-function apiReporteInventarioMensual(anio, mes) {
-  return reporteInventarioMensual(anio, mes);
-}
-
-function apiReporteStockPorEmpleado() {
-  return reporteStockPorEmpleado();
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   WRAPPER NUEVO — pegar en Code.gs junto al resto de apiXxx()
-══════════════════════════════════════════════════════════════════════ */
- 
 function apiRegistrarOrdenVenta(idEmpleado, lineas) {
+  const empleado = obtenerEmpleadoPorId(idEmpleado);
+  if (!empleado || empleado.activo !== true) {
+    throw new Error('El empleado no existe o no está activo.');
+  }
   return registrarOrdenVenta(idEmpleado, lineas);
 }
- 
-// ── Los siguientes ya deben existir; verificar que estén en Code.gs ──
- 
-// function apiListarStockDeEmpleado(idEmpleado) {
-//   return listarStockDeEmpleado(idEmpleado);
-// }
- 
-// function apiListarVentasDeEmpleado(idEmpleado, fechaDesde, fechaHasta) {
-//   return listarVentasDeEmpleado(idEmpleado, fechaDesde, fechaHasta);
-// }
-
-// ── Nota: listarVentasDeEmpleado y listarTodasLasVentas ya deben
-//    tener sus wrappers (apiListarVentasDeEmpleado / apiListarTodasLasVentas).
-//    AdminReportes.html los usa. Si aún no existen, agregar:
-
-// function apiListarVentasDeEmpleado(idEmpleado, fechaDesde, fechaHasta) {
-//   return listarVentasDeEmpleado(idEmpleado, fechaDesde, fechaHasta);
-// }
-
-// function apiListarTodasLasVentas(fechaDesde, fechaHasta) {
-//   return listarTodasLasVentas(fechaDesde, fechaHasta);
-// }

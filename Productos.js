@@ -46,10 +46,14 @@ function obtenerProductoPorCodigo(codigoProducto) {
  * (aunque la llave real es id_producto, el código debe ser único de cara al usuario).
  *
  * datos esperado: { codigo_producto, nombre_producto, descripcion, unidad_medida,
- *                    precio_costo, precio_venta }
+ *                    precio_costo, precio_venta, id_proveedor }
+ * id_proveedor es obligatorio: proveedor habitual del producto (debe estar activo).
  */
 function crearProducto(datos) {
   validarDatosProducto_(datos);
+
+  exigirColumna_(SHEET_NAMES.PRODUCTOS, 'id_proveedor');
+  const proveedor = exigirProveedorValido_(datos.id_proveedor);
 
   const existente = obtenerProductoPorCodigo(datos.codigo_producto);
   if (existente) {
@@ -63,6 +67,7 @@ function crearProducto(datos) {
     unidad_medida: datos.unidad_medida || '',
     precio_costo: Number(datos.precio_costo),
     precio_venta: Number(datos.precio_venta),
+    id_proveedor: proveedor.id_proveedor,
     stock_total: 0,
     fecha_creacion: new Date(),
     activo: true
@@ -84,6 +89,12 @@ function editarProducto(idProducto, cambios) {
     if (existente) {
       throw new Error('Ya existe otro producto con el código "' + cambios.codigo_producto + '".');
     }
+  }
+
+  if (cambios.hasOwnProperty('id_proveedor')) {
+    exigirColumna_(SHEET_NAMES.PRODUCTOS, 'id_proveedor');
+    // Si el producto ya tenía ese proveedor (aunque esté inactivo) se tolera; uno nuevo debe estar activo
+    cambios.id_proveedor = exigirProveedorValido_(cambios.id_proveedor, producto.id_proveedor).id_proveedor;
   }
 
   if (cambios.precio_costo !== undefined) cambios.precio_costo = Number(cambios.precio_costo);

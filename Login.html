@@ -12,12 +12,13 @@
         <h1>Control de Inventario</h1>
         <p class="subtitulo">Selecciona tu rol para continuar</p>
       </div>
+      <button type="button" class="btn-tema" data-tema-boton onclick="alternarTema()" aria-label="Cambiar tema">&#9790;</button>
     </div>
 
     <div id="zonaMensaje"></div>
 
     <div id="pantallaSeleccionRol">
-      <div class="opcion-rol" onclick="mostrarPantalla_('admin')">
+      <div class="opcion-rol" role="button" tabindex="0" onclick="mostrarPantalla_('admin')">
         <div class="icono">A</div>
         <div class="texto">
           <strong>Administrador</strong>
@@ -25,7 +26,7 @@
         </div>
       </div>
 
-      <div class="opcion-rol" onclick="mostrarPantalla_('empleado')">
+      <div class="opcion-rol" role="button" tabindex="0" onclick="mostrarPantalla_('empleado')">
         <div class="icono">E</div>
         <div class="texto">
           <strong>Empleado</strong>
@@ -116,7 +117,7 @@ function irAVistaEmpleado_() {
           }
           var opciones = '<option value="">Selecciona...</option>';
           empleados.forEach(function (emp) {
-            opciones += '<option value="' + emp.id_empleado + '">' + emp.nombre_empleado + '</option>';
+            opciones += '<option value="' + esc_(emp.id_empleado) + '">' + esc_(emp.nombre_empleado) + '</option>';
           });
           select.innerHTML = opciones;
         })
@@ -129,11 +130,35 @@ function irAVistaEmpleado_() {
 
 
 
-    function mostrarMensaje_(tipo, texto) {
-      var clase = tipo === 'error' ? 'mensaje-error' : 'mensaje-exito';
-      document.getElementById('zonaMensaje').innerHTML =
-        '<div class="mensaje ' + clase + '">' + texto + '</div>';
+    function esc_(valor) {
+      return String(valor == null ? '' : valor)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
+
+    function mostrarMensaje_(tipo, texto) {
+      var div = document.createElement('div');
+      div.className = 'mensaje ' + (tipo === 'error' ? 'mensaje-error' : 'mensaje-exito');
+      div.setAttribute('role', tipo === 'error' ? 'alert' : 'status');
+      div.textContent = texto;
+      var zona = document.getElementById('zonaMensaje');
+      zona.innerHTML = '';
+      zona.appendChild(div);
+    }
+
+    // Enter / Espacio activan las tarjetas de rol; Enter confirma en el selector de empleado
+    document.addEventListener('keydown', function (e) {
+      var t = e.target;
+      if (t.classList && t.classList.contains('opcion-rol') && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        t.click();
+      } else if (t.id === 'selectEmpleado' && e.key === 'Enter') {
+        irAVistaEmpleado_();
+      }
+    });
 
   </script>
 </body>

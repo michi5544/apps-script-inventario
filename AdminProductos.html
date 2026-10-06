@@ -3,86 +3,153 @@
 
   <input type="hidden" id="productoIdEnEdicion" value="">
 
-  <div class="campo">
-    <label for="prodCodigo">Código de producto</label>
-    <input type="text" id="prodCodigo" placeholder="Ej. P-001">
+  <div class="fila-campos">
+    <div class="campo">
+      <label for="prodCodigo">Código <span class="req">*</span></label>
+      <input type="text" id="prodCodigo" placeholder="Ej. P-001" autocomplete="off" maxlength="30">
+    </div>
+
+    <div class="campo">
+      <label for="prodUnidad">Unidad de medida</label>
+      <select id="prodUnidad">
+        <option value="Unidad">Unidad</option>
+        <option value="Caja">Caja</option>
+        <option value="Paquete">Paquete</option>
+        <option value="Par">Par</option>
+      </select>
+    </div>
   </div>
 
   <div class="campo">
-    <label for="prodNombre">Nombre del producto</label>
-    <input type="text" id="prodNombre" placeholder="Ej. Camisa polo talla M">
+    <label for="prodNombre">Nombre del producto <span class="req">*</span></label>
+    <input type="text" id="prodNombre" placeholder="Ej. Camisa polo talla M" autocomplete="off" maxlength="120">
+  </div>
+
+  <div class="campo">
+    <label for="prodProveedor">Proveedor <span class="req">*</span></label>
+    <select id="prodProveedor">
+      <option value="">Cargando proveedores...</option>
+    </select>
+    <p class="pista" id="prodProveedorAviso"></p>
   </div>
 
   <div class="campo">
     <label for="prodDescripcion">Descripción</label>
-    <textarea id="prodDescripcion" rows="2" placeholder="Opcional"></textarea>
+    <textarea id="prodDescripcion" rows="2" placeholder="Opcional" maxlength="300"></textarea>
   </div>
 
-  <div class="campo">
-    <label for="prodUnidad">Unidad de medida</label>
-    <select id="prodUnidad">
-      <option value="Unidad">Unidad</option>
-      <option value="Caja">Caja</option>
-      <option value="Paquete">Paquete</option>
-      <option value="Par">Par</option>
-    </select>
-  </div>
-
-  <div style="display:flex; gap:12px;">
-    <div class="campo" style="flex:1;">
-      <label for="prodPrecioCosto">Precio de costo</label>
-      <input type="number" id="prodPrecioCosto" min="0" step="0.01" placeholder="0.00">
+  <div class="fila-campos">
+    <div class="campo">
+      <label for="prodPrecioCosto">Precio de costo <span class="req">*</span></label>
+      <input type="number" id="prodPrecioCosto" min="0" step="0.01" inputmode="decimal" placeholder="0.00" oninput="actualizarMargen_()">
     </div>
-    <div class="campo" style="flex:1;">
-      <label for="prodPrecioVenta">Precio de venta</label>
-      <input type="number" id="prodPrecioVenta" min="0" step="0.01" placeholder="0.00">
+    <div class="campo">
+      <label for="prodPrecioVenta">Precio de venta <span class="req">*</span></label>
+      <input type="number" id="prodPrecioVenta" min="0" step="0.01" inputmode="decimal" placeholder="0.00" oninput="actualizarMargen_()">
     </div>
   </div>
+  <p class="pista" id="prodMargen" style="margin:-8px 0 16px;"></p>
 
-  <div style="display:flex; gap:10px;">
+  <div class="acciones-form">
     <button class="boton boton-primario" id="btnGuardarProducto" onclick="guardarProducto_()">
       Guardar producto
     </button>
-    <button class="boton boton-fantasma oculto" id="btnCancelarEdicionProducto" style="width:auto; padding:12px 18px;" onclick="cancelarEdicionProducto_()">
+    <button class="boton boton-fantasma boton-auto oculto" id="btnCancelarEdicionProducto" onclick="cancelarEdicionProducto_()">
       Cancelar
     </button>
   </div>
 </div>
 
-
-
 <div class="card">
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-    <h2 style="margin:0;">Catálogo de productos</h2>
-    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:400; margin:0;">
-      <input type="checkbox" id="checkVerInactivos" onchange="cargarProductos_()" style="width:auto;">
+  <div class="encabezado-lista">
+    <h2>Catálogo de productos</h2>
+    <label class="check-inline">
+      <input type="checkbox" id="checkVerInactivos" onchange="cargarProductos_()">
       Ver inactivos
     </label>
   </div>
   <div id="tablaProductos">
-    <p style="font-size:13px; color:var(--color-base-suave);">Cargando...</p>
+    <p class="texto-vacio">Cargando...</p>
   </div>
 </div>
 
 <script>
   var productosCache_ = [];
+  var proveedoresCache_ = [];
+
+  // Nombre (ya escapado) de un proveedor por id; '' si no existe o el producto no tiene
+  function nombreProveedor_(idProveedor) {
+    if (idProveedor === '' || idProveedor === undefined || idProveedor === null) return '';
+    var p = proveedoresCache_.filter(function (x) { return String(x.id_proveedor) === String(idProveedor); })[0];
+    return p ? esc_(p.nombre_proveedor) + (p.activo ? '' : ' <span class="insignia insignia-alerta">Inactivo</span>') : '';
+  }
+
+  function cargarProveedoresParaProducto_() {
+    google.script.run
+      .withSuccessHandler(function (proveedores) {
+        proveedoresCache_ = proveedores || [];
+        poblarSelectProveedorProducto_();
+        // La tabla puede haberse dibujado antes de conocer los nombres
+        if (productosCache_.length) {
+          poblarTablaProductos_(productosCache_, document.getElementById('checkVerInactivos').checked);
+        }
+      })
+      .withFailureHandler(function (error) {
+        var sel = document.getElementById('prodProveedor');
+        sel.innerHTML = '<option value="">No se pudieron cargar los proveedores</option>';
+        document.getElementById('prodProveedorAviso').textContent =
+          error.message + (/Proveedores/.test(error.message) ? ' Ejecuta migrarProveedores() desde el editor de Apps Script.' : '');
+        document.getElementById('prodProveedorAviso').className = 'pista alerta';
+      })
+      .apiListarTodosLosProveedores();
+  }
+
+  // Rellena el selector con los proveedores activos; conserva la selección actual
+  // (o la indicada) y, si es un proveedor inactivo, lo muestra marcado.
+  function poblarSelectProveedorProducto_(valor) {
+    var sel = document.getElementById('prodProveedor');
+    var aviso = document.getElementById('prodProveedorAviso');
+    var elegido = valor !== undefined ? String(valor) : sel.value;
+
+    var activos = proveedoresCache_.filter(function (p) { return p.activo === true; });
+    var html = '<option value="">Selecciona un proveedor...</option>';
+    activos.forEach(function (p) {
+      html += '<option value="' + esc_(p.id_proveedor) + '">' + esc_(p.nombre_proveedor) + '</option>';
+    });
+
+    var inactivo = proveedoresCache_.filter(function (p) {
+      return p.activo !== true && String(p.id_proveedor) === elegido;
+    })[0];
+    if (inactivo) {
+      html += '<option value="' + esc_(inactivo.id_proveedor) + '">' + esc_(inactivo.nombre_proveedor) + ' (inactivo)</option>';
+    }
+
+    sel.innerHTML = html;
+    sel.value = elegido;
+    if (sel.value !== elegido) sel.value = '';
+
+    if (activos.length === 0) {
+      aviso.textContent = 'Aún no hay proveedores activos. Regístralos primero en la sección Proveedores.';
+      aviso.className = 'pista alerta';
+    } else {
+      aviso.textContent = '';
+      aviso.className = 'pista';
+    }
+  }
 
 function cargarProductos_() {
+    cargarProveedoresParaProducto_();
     var verInactivos = document.getElementById('checkVerInactivos').checked;
-    console.log('>>> checkVerInactivos leído:', verInactivos);
-
     var contenedor = document.getElementById('tablaProductos');
-    contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-base-suave);">Cargando...</p>';
+    contenedor.innerHTML = '<p class="texto-vacio">Cargando...</p>';
 
     var llamada = google.script.run
       .withSuccessHandler(function (productos) {
-        console.log('>>> Respuesta exitosa:', productos);
         productosCache_ = productos || [];
         poblarTablaProductos_(productosCache_, verInactivos);
       })
       .withFailureHandler(function (error) {
-        console.log('>>> ERROR:', error);
-        contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-alerta);">Error al cargar: ' + error.message + '</p>';
+        contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-alerta);">Error al cargar: ' + esc_(error.message) + '</p>';
       });
 
     if (verInactivos) {
@@ -96,11 +163,11 @@ function cargarProductos_() {
     var contenedor = document.getElementById('tablaProductos');
 
     if (productos.length === 0) {
-      contenedor.innerHTML = '<p style="font-size:13px; color:var(--color-base-suave);">No hay productos registrados.</p>';
+      contenedor.innerHTML = '<p class="texto-vacio">No hay productos registrados.</p>';
       return;
     }
 
-    var html = '<table><thead><tr><th>Código</th><th>Producto</th><th>Stock</th><th>P. Venta</th><th></th></tr></thead><tbody>';
+    var html = '<div class="tabla-scroll"><table><thead><tr><th>Código</th><th>Producto</th><th>Proveedor</th><th>Stock</th><th>P. Venta</th><th></th></tr></thead><tbody>';
 
     productos.forEach(function (p) {
       var insigniaEstado = p.activo
@@ -112,23 +179,42 @@ function cargarProductos_() {
         : '<span class="insignia insignia-exito">' + p.stock_total + '</span>';
 
       var botonToggle = p.activo
-        ? '<button class="boton boton-fantasma" style="width:auto; padding:6px 10px; font-size:12px;" onclick="confirmarDesactivarProducto_(' + p.id_producto + ')">Desactivar</button>'
-        : '<button class="boton boton-secundario" style="width:auto; padding:6px 10px; font-size:12px;" onclick="reactivarProducto_(' + p.id_producto + ')">Reactivar</button>';
+        ? '<button class="boton boton-peligro boton-sm" onclick="confirmarDesactivarProducto_(' + p.id_producto + ')">Desactivar</button>'
+        : '<button class="boton boton-secundario boton-sm" onclick="reactivarProducto_(' + p.id_producto + ')">Reactivar</button>';
 
       html += '<tr>' +
-        '<td>' + p.codigo_producto + '</td>' +
-        '<td>' + p.nombre_producto + insigniaEstado + '</td>' +
+        '<td>' + esc_(p.codigo_producto) + '</td>' +
+        '<td>' + esc_(p.nombre_producto) + insigniaEstado + '</td>' +
+        '<td>' + (nombreProveedor_(p.id_proveedor) || '<span style="color:var(--color-alerta);">Sin asignar</span>') + '</td>' +
         '<td>' + insigniaStock + '</td>' +
         '<td>$' + Number(p.precio_venta).toFixed(2) + '</td>' +
-        '<td style="white-space:nowrap;">' +
-          '<button class="boton boton-fantasma" style="width:auto; padding:6px 10px; font-size:12px; margin-right:4px;" onclick="editarProductoDesdeTabla_(' + p.id_producto + ')">Editar</button>' +
+        '<td><div class="acciones-fila">' +
+          '<button class="boton boton-fantasma boton-sm" onclick="editarProductoDesdeTabla_(' + p.id_producto + ')">Editar</button>' +
           botonToggle +
-        '</td>' +
+        '</div></td>' +
         '</tr>';
     });
 
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     contenedor.innerHTML = html;
+  }
+
+  function actualizarMargen_() {
+    var costo = parseFloat(document.getElementById('prodPrecioCosto').value);
+    var venta = parseFloat(document.getElementById('prodPrecioVenta').value);
+    var el = document.getElementById('prodMargen');
+
+    if (isNaN(costo) || isNaN(venta) || venta <= 0) {
+      el.textContent = '';
+      el.className = 'pista';
+      return;
+    }
+
+    var ganancia = venta - costo;
+    var margen = (ganancia / venta) * 100;
+    el.textContent = 'Ganancia por unidad: $' + ganancia.toFixed(2) + ' · Margen: ' + margen.toFixed(1) + '%' +
+      (ganancia < 0 ? ' (vendes por debajo del costo)' : '');
+    el.className = 'pista ' + (ganancia < 0 ? 'alerta' : 'exito');
   }
 
   function guardarProducto_() {
@@ -140,11 +226,30 @@ function cargarProductos_() {
       descripcion: document.getElementById('prodDescripcion').value.trim(),
       unidad_medida: document.getElementById('prodUnidad').value,
       precio_costo: document.getElementById('prodPrecioCosto').value,
-      precio_venta: document.getElementById('prodPrecioVenta').value
+      precio_venta: document.getElementById('prodPrecioVenta').value,
+      id_proveedor: document.getElementById('prodProveedor').value
     };
 
-    if (!datos.codigo_producto || !datos.nombre_producto || !datos.precio_costo || !datos.precio_venta) {
+    if (!datos.id_proveedor) {
+      mostrarMensajeGlobal_('error', 'Selecciona el proveedor del producto.');
+      document.getElementById('prodProveedor').focus();
+      return;
+    }
+
+    if (!datos.codigo_producto || !datos.nombre_producto || datos.precio_costo === '' || datos.precio_venta === '') {
       mostrarMensajeGlobal_('error', 'Completa código, nombre y ambos precios.');
+      return;
+    }
+
+    var costo = Number(datos.precio_costo);
+    var venta = Number(datos.precio_venta);
+
+    if (isNaN(costo) || isNaN(venta) || costo < 0 || venta < 0) {
+      mostrarMensajeGlobal_('error', 'Los precios deben ser números válidos y no pueden ser negativos.');
+      return;
+    }
+
+    if (venta < costo && !window.confirm('El precio de venta ($' + venta.toFixed(2) + ') es menor al costo ($' + costo.toFixed(2) + '). ¿Guardar de todas formas?')) {
       return;
     }
 
@@ -197,6 +302,8 @@ function cargarProductos_() {
     document.getElementById('prodUnidad').value = producto.unidad_medida || 'Unidad';
     document.getElementById('prodPrecioCosto').value = producto.precio_costo;
     document.getElementById('prodPrecioVenta').value = producto.precio_venta;
+    poblarSelectProveedorProducto_(producto.id_proveedor === undefined ? '' : producto.id_proveedor);
+    actualizarMargen_();
 
     document.getElementById('tituloFormularioProducto').textContent = 'Editar producto';
     document.getElementById('btnCancelarEdicionProducto').classList.remove('oculto');
@@ -216,6 +323,8 @@ function cargarProductos_() {
     document.getElementById('prodUnidad').value = 'Unidad';
     document.getElementById('prodPrecioCosto').value = '';
     document.getElementById('prodPrecioVenta').value = '';
+    poblarSelectProveedorProducto_('');
+    actualizarMargen_();
     document.getElementById('tituloFormularioProducto').textContent = 'Nuevo producto';
     document.getElementById('btnCancelarEdicionProducto').classList.add('oculto');
   }

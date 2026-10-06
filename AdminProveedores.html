@@ -1,0 +1,183 @@
+<div class="card">
+  <h2 id="tituloFormularioProveedor">Nuevo proveedor</h2>
+
+  <input type="hidden" id="proveedorIdEnEdicion" value="">
+
+  <div class="campo">
+    <label for="provNombre">Nombre del proveedor <span class="req">*</span></label>
+    <input type="text" id="provNombre" placeholder="Ej. Distribuidora El Sol" autocomplete="off" maxlength="80">
+  </div>
+
+  <div class="acciones-form">
+    <button class="boton boton-primario" id="btnGuardarProveedor" onclick="guardarProveedor_()">
+      Guardar proveedor
+    </button>
+    <button class="boton boton-fantasma boton-auto oculto" id="btnCancelarEdicionProveedor" onclick="limpiarFormularioProveedor_()">
+      Cancelar
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="encabezado-lista">
+    <h2>Proveedores</h2>
+    <label class="check-inline">
+      <input type="checkbox" id="checkVerInactivosProveedores" onchange="cargarProveedores_()">
+      Ver inactivos
+    </label>
+  </div>
+  <div id="tablaProveedores">
+    <p class="texto-vacio">Cargando...</p>
+  </div>
+</div>
+
+<script>
+  var proveedoresTablaCache_ = [];
+
+  function cargarProveedores_() {
+    var verInactivos = document.getElementById('checkVerInactivosProveedores').checked;
+    var contenedor = document.getElementById('tablaProveedores');
+    contenedor.innerHTML = '<p class="texto-vacio">Cargando...</p>';
+
+    google.script.run
+      .withSuccessHandler(function (proveedores) {
+        proveedoresTablaCache_ = (proveedores || []).filter(function (p) {
+          return verInactivos || p.activo === true;
+        });
+        poblarTablaProveedores_(proveedoresTablaCache_);
+      })
+      .withFailureHandler(function (error) {
+        var ayuda = /Proveedores/.test(error.message)
+          ? ' Ejecuta migrarProveedores() una vez desde el editor de Apps Script.'
+          : '';
+        contenedor.innerHTML = '<p class="texto-vacio" style="color:var(--color-alerta);">Error al cargar: ' +
+          esc_(error.message) + esc_(ayuda) + '</p>';
+      })
+      .apiListarTodosLosProveedores();
+  }
+
+  function poblarTablaProveedores_(proveedores) {
+    var contenedor = document.getElementById('tablaProveedores');
+
+    if (proveedores.length === 0) {
+      contenedor.innerHTML = '<p class="texto-vacio">No hay proveedores registrados. Agrega el primero con el formulario de arriba.</p>';
+      return;
+    }
+
+    var html = '<div class="tabla-scroll"><table><thead><tr><th>Proveedor</th><th>Estado</th><th></th></tr></thead><tbody>';
+
+    proveedores.forEach(function (p) {
+      var insignia = p.activo
+        ? '<span class="insignia insignia-exito">Activo</span>'
+        : '<span class="insignia insignia-alerta">Inactivo</span>';
+
+      var botonToggle = p.activo
+        ? '<button class="boton boton-peligro boton-sm" onclick="confirmarDesactivarProveedor_(' + p.id_proveedor + ')">Desactivar</button>'
+        : '<button class="boton boton-secundario boton-sm" onclick="reactivarProveedor_(' + p.id_proveedor + ')">Reactivar</button>';
+
+      html += '<tr>' +
+        '<td>' + esc_(p.nombre_proveedor) + '</td>' +
+        '<td>' + insignia + '</td>' +
+        '<td><div class="acciones-fila">' +
+          '<button class="boton boton-fantasma boton-sm" onclick="editarProveedorDesdeTabla_(' + p.id_proveedor + ')">Editar</button>' +
+          botonToggle +
+        '</div></td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    contenedor.innerHTML = html;
+  }
+
+  function guardarProveedor_() {
+    var idEnEdicion = document.getElementById('proveedorIdEnEdicion').value;
+    var nombre = document.getElementById('provNombre').value.trim();
+
+    if (!nombre) {
+      mostrarMensajeGlobal_('error', 'El nombre del proveedor es obligatorio.');
+      document.getElementById('provNombre').focus();
+      return;
+    }
+
+    var boton = document.getElementById('btnGuardarProveedor');
+    boton.disabled = true;
+    boton.textContent = 'Guardando...';
+
+    var alTerminar = function () {
+      boton.disabled = false;
+      boton.textContent = 'Guardar proveedor';
+    };
+    var alFallar = function (error) {
+      mostrarMensajeGlobal_('error', error.message);
+      alTerminar();
+    };
+
+    if (idEnEdicion) {
+      google.script.run
+        .withSuccessHandler(function () {
+          mostrarMensajeGlobal_('exito', 'Proveedor actualizado correctamente.');
+          limpiarFormularioProveedor_();
+          cargarProveedores_();
+          alTerminar();
+        })
+        .withFailureHandler(alFallar)
+        .apiEditarProveedor(Number(idEnEdicion), { nombre_proveedor: nombre });
+    } else {
+      google.script.run
+        .withSuccessHandler(function () {
+          mostrarMensajeGlobal_('exito', 'Proveedor creado correctamente.');
+          limpiarFormularioProveedor_();
+          cargarProveedores_();
+          alTerminar();
+        })
+        .withFailureHandler(alFallar)
+        .apiCrearProveedor({ nombre_proveedor: nombre });
+    }
+  }
+
+  function editarProveedorDesdeTabla_(idProveedor) {
+    var proveedor = proveedoresTablaCache_.filter(function (p) { return p.id_proveedor === idProveedor; })[0];
+    if (!proveedor) return;
+
+    document.getElementById('proveedorIdEnEdicion').value = proveedor.id_proveedor;
+    document.getElementById('provNombre').value = proveedor.nombre_proveedor;
+    document.getElementById('tituloFormularioProveedor').textContent = 'Editar proveedor';
+    document.getElementById('btnCancelarEdicionProveedor').classList.remove('oculto');
+    document.getElementById('provNombre').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('provNombre').focus();
+  }
+
+  function limpiarFormularioProveedor_() {
+    document.getElementById('proveedorIdEnEdicion').value = '';
+    document.getElementById('provNombre').value = '';
+    document.getElementById('tituloFormularioProveedor').textContent = 'Nuevo proveedor';
+    document.getElementById('btnCancelarEdicionProveedor').classList.add('oculto');
+  }
+
+  function confirmarDesactivarProveedor_(idProveedor) {
+    var proveedor = proveedoresTablaCache_.filter(function (p) { return p.id_proveedor === idProveedor; })[0];
+    var nombre = proveedor ? proveedor.nombre_proveedor : 'este proveedor';
+
+    if (!window.confirm('¿Desactivar a "' + nombre + '"? No se borra su historial de ingresos, pero ya no se podrá elegir en productos ni ingresos nuevos.')) {
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Proveedor desactivado.');
+        cargarProveedores_();
+      })
+      .withFailureHandler(function (error) { mostrarMensajeGlobal_('error', error.message); })
+      .apiDesactivarProveedor(idProveedor);
+  }
+
+  function reactivarProveedor_(idProveedor) {
+    google.script.run
+      .withSuccessHandler(function () {
+        mostrarMensajeGlobal_('exito', 'Proveedor reactivado.');
+        cargarProveedores_();
+      })
+      .withFailureHandler(function (error) { mostrarMensajeGlobal_('error', error.message); })
+      .apiReactivarProveedor(idProveedor);
+  }
+</script>

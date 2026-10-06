@@ -1,4 +1,4 @@
-<div class="card" style="padding-bottom:4px;">
+<div class="card" style="padding-bottom:12px;">
   <div class="nav-admin" style="margin-bottom:0;">
     <button class="activo" data-tab-mov="ingreso" onclick="cambiarTabMovimiento_('ingreso')">Ingreso</button>
     <button data-tab-mov="asignacion" onclick="cambiarTabMovimiento_('asignacion')">Asignación</button>
@@ -10,16 +10,22 @@
 <div id="tabIngreso" class="tab-movimiento">
   <div class="card">
     <h2>Ingreso de mercancía</h2>
-    <p style="font-size:13px; color:var(--color-base-suave); margin-top:-8px;">Suma unidades al inventario general.</p>
+    <p class="ayuda">Suma unidades al inventario general.</p>
 
     <div class="campo">
-      <label for="ingProducto">Producto</label>
-      <select id="ingProducto"></select>
+      <label for="ingProducto">Producto <span class="req">*</span></label>
+      <select id="ingProducto" onchange="sugerirProveedorIngreso_()"></select>
     </div>
 
     <div class="campo">
-      <label for="ingCantidad">Cantidad recibida</label>
-      <input type="number" id="ingCantidad" min="1" step="1" placeholder="Ej. 50">
+      <label for="ingProveedor">Proveedor <span class="req">*</span></label>
+      <select id="ingProveedor"></select>
+      <p class="pista" id="ingProveedorAviso"></p>
+    </div>
+
+    <div class="campo">
+      <label for="ingCantidad">Cantidad recibida <span class="req">*</span></label>
+      <input type="number" id="ingCantidad" min="1" step="1" inputmode="numeric" placeholder="Ej. 50">
     </div>
 
     <div class="campo">
@@ -36,25 +42,25 @@
 <div id="tabAsignacion" class="tab-movimiento oculto">
   <div class="card">
     <h2>Asignar stock a empleado</h2>
-    <p style="font-size:13px; color:var(--color-base-suave); margin-top:-8px;">Resta del inventario general y lo suma al sub-stock del empleado.</p>
+    <p class="ayuda">Resta del inventario general y lo suma al sub-stock del empleado.</p>
 
     <div class="campo">
-      <label for="asigProducto">Producto</label>
+      <label for="asigProducto">Producto <span class="req">*</span></label>
       <select id="asigProducto" onchange="mostrarStockDisponibleAsignacion_()"></select>
     </div>
 
-    <div id="cuadroStockAsignacion" class="oculto" style="background:var(--color-primario-claro); border-radius:var(--radio-md); padding:10px 14px; margin-bottom:16px; font-size:13px;">
+    <div id="cuadroStockAsignacion" class="cuadro-info oculto">
       Disponible en inventario general: <strong id="stockDisponibleAsignacionTexto">0</strong>
     </div>
 
     <div class="campo">
-      <label for="asigEmpleado">Empleado</label>
+      <label for="asigEmpleado">Empleado <span class="req">*</span></label>
       <select id="asigEmpleado"></select>
     </div>
 
     <div class="campo">
-      <label for="asigCantidad">Cantidad a asignar</label>
-      <input type="number" id="asigCantidad" min="1" step="1" placeholder="Ej. 10">
+      <label for="asigCantidad">Cantidad a asignar <span class="req">*</span></label>
+      <input type="number" id="asigCantidad" min="1" step="1" inputmode="numeric" placeholder="Ej. 10">
     </div>
 
     <button class="boton boton-primario" id="btnRegistrarAsignacion" onclick="registrarAsignacion_()">
@@ -66,27 +72,27 @@
 <div id="tabDevolucionEmpleado" class="tab-movimiento oculto">
   <div class="card">
     <h2>Devolución de empleado</h2>
-    <p style="font-size:13px; color:var(--color-base-suave); margin-top:-8px;">Producto no vendido que regresa al inventario general.</p>
+    <p class="ayuda">Producto no vendido que regresa al inventario general.</p>
 
     <div class="campo">
-      <label for="devEmpEmpleado">Empleado</label>
+      <label for="devEmpEmpleado">Empleado <span class="req">*</span></label>
       <select id="devEmpEmpleado" onchange="cargarStockParaDevolucion_()"></select>
     </div>
 
     <div class="campo">
-      <label for="devEmpProducto">Producto</label>
+      <label for="devEmpProducto">Producto <span class="req">*</span></label>
       <select id="devEmpProducto">
         <option value="">Selecciona primero un empleado</option>
       </select>
     </div>
 
-    <div id="cuadroStockDevolucion" class="oculto" style="background:var(--color-primario-claro); border-radius:var(--radio-md); padding:10px 14px; margin-bottom:16px; font-size:13px;">
+    <div id="cuadroStockDevolucion" class="cuadro-info oculto">
       Este empleado tiene <strong id="stockDevolucionTexto">0</strong> unidades de este producto
     </div>
 
     <div class="campo">
-      <label for="devEmpCantidad">Cantidad a devolver</label>
-      <input type="number" id="devEmpCantidad" min="1" step="1" placeholder="Ej. 5">
+      <label for="devEmpCantidad">Cantidad a devolver <span class="req">*</span></label>
+      <input type="number" id="devEmpCantidad" min="1" step="1" inputmode="numeric" placeholder="Ej. 5">
     </div>
 
     <button class="boton boton-primario" id="btnRegistrarDevolucionEmpleado" onclick="registrarDevolucionEmpleado_()">
@@ -98,15 +104,15 @@
 <div id="tabDevolucionCliente" class="tab-movimiento oculto">
   <div class="card">
     <h2>Devolución de cliente final</h2>
-    <p style="font-size:13px; color:var(--color-base-suave); margin-top:-8px;">Producto ya vendido que el cliente regresó. El producto vuelve al sub-stock del empleado que hizo la venta.</p>
+    <p class="ayuda">Producto ya vendido que el cliente regresó. El producto vuelve al sub-stock del empleado que hizo la venta.</p>
 
     <div class="campo">
-      <label for="devClienteEmpleado">Empleado que hizo la venta</label>
+      <label for="devClienteEmpleado">Empleado que hizo la venta <span class="req">*</span></label>
       <select id="devClienteEmpleado" onchange="cargarVentasParaDevolucion_()"></select>
     </div>
 
     <div class="campo">
-      <label for="devClienteVenta">Venta a devolver</label>
+      <label for="devClienteVenta">Venta a devolver <span class="req">*</span></label>
       <select id="devClienteVenta">
         <option value="">Selecciona primero un empleado</option>
       </select>
@@ -127,9 +133,67 @@
   var productosActivosMovCache_ = [];
   var empleadosActivosMovCache_ = [];
 
+  // Devuelve la cantidad como entero positivo, o null si no es válida
+  function leerCantidadEntera_(idInput) {
+    var texto = document.getElementById(idInput).value.trim();
+    if (!/^\d+$/.test(texto)) return null;
+    var n = Number(texto);
+    return n > 0 ? n : null;
+  }
+
+  function stockGeneralDe_(idProducto) {
+    var p = productosActivosMovCache_.filter(function (x) {
+      return String(x.id_producto) === String(idProducto);
+    })[0];
+    return p ? Number(p.stock_total) : 0;
+  }
+
+  var proveedoresActivosMovCache_ = [];
+
   function inicializarMovimientos_() {
     cargarProductosParaMovimientos_();
     cargarEmpleadosParaMovimientos_();
+    cargarProveedoresParaMovimientos_();
+  }
+
+  function cargarProveedoresParaMovimientos_() {
+    var aviso = document.getElementById('ingProveedorAviso');
+    google.script.run
+      .withSuccessHandler(function (proveedores) {
+        proveedoresActivosMovCache_ = proveedores || [];
+        var elegido = document.getElementById('ingProveedor').value;
+        poblarSelectGenerico_('ingProveedor', proveedores, 'id_proveedor', 'nombre_proveedor', 'Selecciona un proveedor...');
+        document.getElementById('ingProveedor').value = elegido;
+
+        if (proveedoresActivosMovCache_.length === 0) {
+          aviso.textContent = 'Aún no hay proveedores activos. Regístralos primero en la sección Proveedores.';
+          aviso.className = 'pista alerta';
+        } else {
+          aviso.textContent = '';
+          aviso.className = 'pista';
+        }
+      })
+      .withFailureHandler(function (error) {
+        aviso.textContent = error.message + (/Proveedores/.test(error.message)
+          ? ' Ejecuta migrarProveedores() desde el editor de Apps Script.' : '');
+        aviso.className = 'pista alerta';
+      })
+      .apiListarProveedoresActivos();
+  }
+
+  // Al elegir el producto se sugiere su proveedor habitual (se puede cambiar)
+  function sugerirProveedorIngreso_() {
+    var idProducto = document.getElementById('ingProducto').value;
+    var producto = productosActivosMovCache_.filter(function (p) {
+      return String(p.id_producto) === String(idProducto);
+    })[0];
+    if (!producto || !producto.id_proveedor) return;
+
+    var sel = document.getElementById('ingProveedor');
+    var existe = proveedoresActivosMovCache_.some(function (p) {
+      return String(p.id_proveedor) === String(producto.id_proveedor);
+    });
+    if (existe) sel.value = String(producto.id_proveedor);
   }
 
   function cambiarTabMovimiento_(tab) {
@@ -178,7 +242,7 @@
     }
     var opciones = '<option value="">' + textoVacio + '</option>';
     items.forEach(function (item) {
-      opciones += '<option value="' + item[campoValor] + '">' + item[campoTexto] + '</option>';
+      opciones += '<option value="' + esc_(item[campoValor]) + '">' + esc_(item[campoTexto]) + '</option>';
     });
     select.innerHTML = opciones;
   }
@@ -187,11 +251,17 @@
 
   function registrarIngreso_() {
     var idProducto = document.getElementById('ingProducto').value;
-    var cantidad = document.getElementById('ingCantidad').value;
+    var idProveedor = document.getElementById('ingProveedor').value;
+    var cantidad = leerCantidadEntera_('ingCantidad');
     var observaciones = document.getElementById('ingObservaciones').value.trim();
 
-    if (!idProducto || !cantidad || Number(cantidad) <= 0) {
-      mostrarMensajeGlobal_('error', 'Selecciona un producto e ingresa una cantidad válida.');
+    if (!idProducto || !cantidad) {
+      mostrarMensajeGlobal_('error', 'Selecciona un producto e ingresa una cantidad entera mayor a cero.');
+      return;
+    }
+    if (!idProveedor) {
+      mostrarMensajeGlobal_('error', 'Selecciona el proveedor que entrega esta mercancía.');
+      document.getElementById('ingProveedor').focus();
       return;
     }
 
@@ -205,6 +275,7 @@
         document.getElementById('ingCantidad').value = '';
         document.getElementById('ingObservaciones').value = '';
         document.getElementById('ingProducto').value = '';
+        cargarProductosParaMovimientos_();
         boton.disabled = false;
         boton.textContent = 'Registrar ingreso';
       })
@@ -215,6 +286,7 @@
       })
       .apiRegistrarIngresoProveedor({
         id_producto: idProducto,
+        id_proveedor: idProveedor,
         cantidad: cantidad,
         observaciones: observaciones
       });
@@ -248,10 +320,16 @@
   function registrarAsignacion_() {
     var idProducto = document.getElementById('asigProducto').value;
     var idEmpleado = document.getElementById('asigEmpleado').value;
-    var cantidad = document.getElementById('asigCantidad').value;
+    var cantidad = leerCantidadEntera_('asigCantidad');
 
-    if (!idProducto || !idEmpleado || !cantidad || Number(cantidad) <= 0) {
-      mostrarMensajeGlobal_('error', 'Completa producto, empleado y una cantidad válida.');
+    if (!idProducto || !idEmpleado || !cantidad) {
+      mostrarMensajeGlobal_('error', 'Completa producto, empleado y una cantidad entera mayor a cero.');
+      return;
+    }
+
+    var disponible = stockGeneralDe_(idProducto);
+    if (cantidad > disponible) {
+      mostrarMensajeGlobal_('error', 'Solo hay ' + disponible + ' unidades en el inventario general.');
       return;
     }
 
@@ -304,8 +382,8 @@
         }
         var opciones = '<option value="">Selecciona un producto...</option>';
         stock.forEach(function (item) {
-          opciones += '<option value="' + item.id_producto + '" data-disponible="' + item.cantidad_disponible + '">' +
-            item.nombre_producto + ' (' + item.cantidad_disponible + ' disp.)</option>';
+          opciones += '<option value="' + esc_(item.id_producto) + '" data-disponible="' + esc_(item.cantidad_disponible) + '">' +
+            esc_(item.nombre_producto) + ' (' + esc_(item.cantidad_disponible) + ' disp.)</option>';
         });
         selectProducto.innerHTML = opciones;
       })
@@ -335,10 +413,17 @@
   function registrarDevolucionEmpleado_() {
     var idEmpleado = document.getElementById('devEmpEmpleado').value;
     var idProducto = document.getElementById('devEmpProducto').value;
-    var cantidad = document.getElementById('devEmpCantidad').value;
+    var cantidad = leerCantidadEntera_('devEmpCantidad');
 
-    if (!idEmpleado || !idProducto || !cantidad || Number(cantidad) <= 0) {
-      mostrarMensajeGlobal_('error', 'Completa empleado, producto y una cantidad válida.');
+    if (!idEmpleado || !idProducto || !cantidad) {
+      mostrarMensajeGlobal_('error', 'Completa empleado, producto y una cantidad entera mayor a cero.');
+      return;
+    }
+
+    var opcion = document.getElementById('devEmpProducto').selectedOptions[0];
+    var tiene = Number(opcion && opcion.getAttribute('data-disponible'));
+    if (cantidad > tiene) {
+      mostrarMensajeGlobal_('error', 'El empleado solo tiene ' + tiene + ' unidades de este producto.');
       return;
     }
 
@@ -398,8 +483,8 @@
 
         var opciones = '<option value="">Selecciona una venta...</option>';
         ventasElegibles.forEach(function (v) {
-          opciones += '<option value="' + v.id_venta + '">' +
-            v.fecha_venta + ' — ' + v.nombre_producto + ' (' + v.cantidad_vendida + ' un.)</option>';
+          opciones += '<option value="' + esc_(v.id_venta) + '">' +
+            esc_(v.fecha_venta) + ' — ' + esc_(v.nombre_producto) + ' (' + esc_(v.cantidad_vendida) + ' un.)</option>';
         });
         selectVenta.innerHTML = opciones;
       })
@@ -420,6 +505,10 @@
 
     if (!idVenta) {
       mostrarMensajeGlobal_('error', 'Selecciona la venta a devolver.');
+      return;
+    }
+
+    if (!window.confirm('¿Registrar la devolución de esta venta? Esta acción no se puede deshacer.')) {
       return;
     }
 

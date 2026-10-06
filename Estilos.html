@@ -1,3 +1,50 @@
+<script>
+  /* Tema claro / oscuro de todo el sistema.
+     Se guarda en el navegador y, si nunca se eligió, sigue el del dispositivo.
+     Se aplica aquí, antes de pintar la página, para evitar el parpadeo. */
+  (function () {
+    var CLAVE = 'tema';
+
+    function leer() {
+      try {
+        var t = localStorage.getItem(CLAVE);
+        return (t === 'oscuro' || t === 'claro') ? t : null;
+      } catch (e) { return null; }
+    }
+    function sistema() {
+      return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'oscuro' : 'claro';
+    }
+    function pintarBotones() {
+      var oscuro = document.documentElement.getAttribute('data-tema') === 'oscuro';
+      var botones = document.querySelectorAll('[data-tema-boton]');
+      for (var i = 0; i < botones.length; i++) {
+        botones[i].textContent = oscuro ? '\u2600' : '\u263E';
+        botones[i].setAttribute('title', oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+        botones[i].setAttribute('aria-label', oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+      }
+    }
+    function aplicar(tema) {
+      document.documentElement.setAttribute('data-tema', tema);
+      pintarBotones();
+      try { window.dispatchEvent(new Event('temacambiado')); } catch (e) {}
+    }
+
+    window.alternarTema = function () {
+      var nuevo = document.documentElement.getAttribute('data-tema') === 'oscuro' ? 'claro' : 'oscuro';
+      try { localStorage.setItem(CLAVE, nuevo); } catch (e) {}
+      aplicar(nuevo);
+    };
+
+    document.documentElement.setAttribute('data-tema', leer() || sistema());
+    document.addEventListener('DOMContentLoaded', pintarBotones);
+
+    if (window.matchMedia) {
+      var mq = window.matchMedia('(prefers-color-scheme: dark)');
+      var alCambiar = function () { if (!leer()) aplicar(sistema()); };
+      if (mq.addEventListener) mq.addEventListener('change', alCambiar);
+    }
+  })();
+</script>
 <style>
   :root {
     --color-base: #1C2B33;
@@ -14,10 +61,84 @@
     --color-exito-claro: #E6EFE8;
     --color-alerta: #C0392B;
     --color-alerta-claro: #F8E6E3;
+    --color-aviso: #B7791F;
+    --color-aviso-claro: #FBF1DC;
     --radio-md: 8px;
     --radio-lg: 12px;
     --sombra-card: 0 1px 3px rgba(28, 43, 51, 0.08);
+    --sombra-elevada: 0 4px 14px rgba(28, 43, 51, 0.12);
+    --color-fila-hover: #FAF8F4;
+    --color-placeholder: #8A969C;
+    --color-borde-hover: #B9B2A3;
+    /* Encabezado: mismo teal profundo en ambos temas */
+    --color-encabezado: #2D5F6B;
+    --color-sobre-encabezado: #FFFFFF;
+    --color-encabezado-suave: #CFE3E8;
+    /* Relleno único de botones y pestañas activas: el mismo teal del encabezado
+       en ambos temas, con letras blancas. */
+    --color-relleno: #2D5F6B;
+    --color-sobre-relleno: #FFFFFF;
+    --color-peligro-relleno: #B03A2E;
+    color-scheme: light;
   }
+
+  /* ── Tema oscuro ─────────────────────────────────────────────────────
+     Mismos nombres de variable: todo el sistema cambia sin tocar cada pantalla.
+     --color-primario pasa a un teal claro (legible sobre fondo oscuro) y el
+     texto sobre botones/pestañas rellenos pasa a tinta oscura. */
+  :root[data-tema="oscuro"] {
+    color-scheme: dark;
+    --color-base: #E7EDF0;
+    --color-base-suave: #A8B5BC;
+    --color-superficie: #12191D;
+    --color-superficie-card: #1B252B;
+    --color-borde: #2F3D45;
+    --color-primario: #5FB3C4;
+    --color-primario-oscuro: #9AD5E1;
+    --color-primario-claro: #1F3A43;
+    --color-secundario: #D9976F;
+    --color-secundario-claro: #3A2A20;
+    --color-exito: #6FBF8A;
+    --color-exito-claro: #1C3327;
+    --color-alerta: #F0877B;
+    --color-alerta-claro: #3C2220;
+    --color-aviso: #E0AE55;
+    --color-aviso-claro: #3A2F18;
+    --sombra-card: 0 1px 3px rgba(0, 0, 0, 0.35);
+    --sombra-elevada: 0 4px 14px rgba(0, 0, 0, 0.45);
+    --color-fila-hover: #202C33;
+    --color-placeholder: #7C8B93;
+    --color-borde-hover: #4A5B65;
+  }
+
+  /* Al imprimir se vuelve siempre a colores claros (papel blanco) */
+  @media print {
+    :root[data-tema="oscuro"] {
+      color-scheme: light;
+      --color-base: #1C2B33;
+      --color-base-suave: #44545C;
+      --color-superficie: #F7F5F1;
+      --color-superficie-card: #FFFFFF;
+      --color-borde: #DDD8CE;
+      --color-primario: #2D5F6B;
+      --color-primario-oscuro: #21474F;
+      --color-primario-claro: #E4EDEF;
+      --color-secundario: #B8754F;
+      --color-secundario-claro: #F3E6DC;
+      --color-exito: #4A7C59;
+      --color-exito-claro: #E6EFE8;
+      --color-alerta: #C0392B;
+      --color-alerta-claro: #F8E6E3;
+      --color-aviso: #B7791F;
+      --color-aviso-claro: #FBF1DC;
+      --sombra-card: 0 1px 3px rgba(28, 43, 51, 0.08);
+      --sombra-elevada: 0 4px 14px rgba(28, 43, 51, 0.12);
+      --color-fila-hover: #FAF8F4;
+      --color-placeholder: #8A969C;
+      --color-borde-hover: #B9B2A3;
+    }
+  }
+
 
   * { box-sizing: border-box; }
 
@@ -29,7 +150,30 @@
     font-family: -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
     font-size: 15px;
     line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
   }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primario);
+    outline-offset: 2px;
+  }
+
+  .encabezado-acciones { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .btn-tema {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    font-family: inherit;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--color-relleno);
+    background: #FFFFFF;
+    border: 1px solid #FFFFFF;
+    border-radius: var(--radio-md);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-tema:hover { background: #E4EDEF; }
 
   .contenedor {
     max-width: 720px;
@@ -41,10 +185,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--color-primario);
-    color: #FFFFFF;
+    background: var(--color-encabezado);
+    color: var(--color-sobre-encabezado);
     padding: 16px 20px;
     margin-bottom: 24px;
+    border-radius: var(--radio-lg);
+    box-shadow: var(--sombra-card);
   }
 
   .encabezado-app h1 {
@@ -55,7 +201,7 @@
 
   .encabezado-app .subtitulo {
     font-size: 13px;
-    color: var(--color-primario-claro);
+    color: var(--color-encabezado-suave);
     margin: 2px 0 0;
   }
 
@@ -69,11 +215,66 @@
   }
 
   .card h2 {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     margin: 0 0 14px;
     color: var(--color-primario-oscuro);
   }
+
+  .ayuda {
+    font-size: 13px;
+    color: var(--color-base-suave);
+    margin: -8px 0 16px;
+  }
+
+  .req { color: var(--color-alerta); margin-left: 2px; }
+  .pista { font-size: 12px; color: var(--color-base-suave); margin: 5px 0 0; }
+  .pista.alerta { color: var(--color-alerta); font-weight: 600; }
+  .pista.exito  { color: var(--color-exito);  font-weight: 600; }
+
+  .cuadro-info {
+    background: var(--color-primario-claro);
+    border-left: 3px solid var(--color-primario);
+    border-radius: var(--radio-md);
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--color-primario-oscuro);
+  }
+
+  .fila-campos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0 14px;
+  }
+
+  .encabezado-lista {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .encabezado-lista h2 { margin: 0; }
+
+  .check-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0;
+    cursor: pointer;
+  }
+  .check-inline input { width: 16px; height: 16px; margin: 0; accent-color: var(--color-primario); }
+
+  .acciones-form { display: flex; gap: 10px; flex-wrap: wrap; }
+  .acciones-form .boton-primario { flex: 1; min-width: 160px; }
+
+  .tabla-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .texto-vacio { font-size: 13px; color: var(--color-base-suave); padding: 6px 0; }
+  .acciones-fila { display: flex; gap: 6px; justify-content: flex-end; white-space: nowrap; }
 
   label {
     display: block;
@@ -91,17 +292,35 @@
   input[type="number"],
   input[type="email"],
   input[type="date"],
+  input[type="month"],
   select,
   textarea {
     width: 100%;
     padding: 10px 12px;
-    font-size: 15px;
+    min-height: 44px;
+    font-size: 16px; /* 16px evita el zoom automático en iOS al enfocar */
     font-family: inherit;
     border: 1px solid var(--color-borde);
     border-radius: var(--radio-md);
     background: var(--color-superficie-card);
     color: var(--color-base);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
+
+  input::placeholder,
+  textarea::placeholder { color: var(--color-placeholder); }
+
+  input:hover:not(:disabled),
+  select:hover:not(:disabled),
+  textarea:hover:not(:disabled) { border-color: var(--color-borde-hover); }
+
+  input:disabled, select:disabled, textarea:disabled {
+    background: var(--color-superficie);
+    color: var(--color-base-suave);
+    cursor: not-allowed;
+  }
+
+  textarea { resize: vertical; }
 
   input:focus,
   select:focus,
@@ -118,21 +337,38 @@
     gap: 6px;
     width: 100%;
     padding: 12px 18px;
+    min-height: 44px;
     font-size: 15px;
     font-weight: 600;
     font-family: inherit;
-    border: none;
+    border: 1px solid transparent;
     border-radius: var(--radio-md);
     cursor: pointer;
-    transition: filter 0.15s ease;
+    transition: filter 0.15s ease, background 0.15s ease;
   }
+
+  .boton:hover:not(:disabled) { filter: brightness(1.08); }
 
   .boton:active { filter: brightness(0.92); }
   .boton:disabled { opacity: 0.55; cursor: not-allowed; }
 
-  .boton-primario { background: var(--color-primario); color: #FFFFFF; }
-  .boton-secundario { background: var(--color-secundario); color: #FFFFFF; }
-  .boton-fantasma { background: transparent; color: var(--color-primario); border: 1px solid var(--color-primario); }
+  /* Todos los botones comparten el mismo relleno sólido. Las variantes
+     (primario, secundario, fantasma) se conservan como nombres, pero ya no cambian
+     el aspecto. Única excepción: "peligro" (desactivar), en rojo sólido. */
+  .boton-primario,
+  .boton-secundario,
+  .boton-fantasma {
+    background: var(--color-relleno);
+    color: var(--color-sobre-relleno);
+    border-color: var(--color-relleno);
+  }
+  .boton-peligro {
+    background: var(--color-peligro-relleno);
+    color: var(--color-sobre-relleno);
+    border-color: var(--color-peligro-relleno);
+  }
+  .boton-sm { width: auto; min-height: 34px; padding: 6px 12px; font-size: 13px; }
+  .boton-auto { width: auto; }
 
   .insignia {
     display: inline-block;
@@ -153,6 +389,7 @@
     margin-bottom: 16px;
   }
 
+  .mensaje { box-shadow: var(--sombra-card); }
   .mensaje-error { background: var(--color-alerta-claro); color: var(--color-alerta); border: 1px solid var(--color-alerta); }
   .mensaje-exito { background: var(--color-exito-claro); color: var(--color-exito); border: 1px solid var(--color-exito); }
 
@@ -165,19 +402,25 @@
   table th {
     text-align: left;
     font-size: 12px;
-    font-weight: 600;
-    color: var(--color-base-suave);
+    font-weight: 700;
+    color: var(--color-sobre-relleno);
+    background: var(--color-relleno);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    padding: 8px 10px;
-    border-bottom: 2px solid var(--color-borde);
+    letter-spacing: 0.05em;
+    padding: 11px 12px;
+    border-bottom: none;
   }
+  table thead th:first-child { border-top-left-radius: var(--radio-md); }
+  table thead th:last-child  { border-top-right-radius: var(--radio-md); }
 
   table td {
     padding: 10px;
     border-bottom: 1px solid var(--color-borde);
     font-variant-numeric: tabular-nums;
   }
+
+  table tbody tr:hover td { background: var(--color-fila-hover); }
+  table tbody tr:last-child td { border-bottom: none; }
 
   .opcion-rol {
     display: flex;
@@ -192,7 +435,8 @@
     transition: border-color 0.15s ease;
   }
 
-  .opcion-rol:hover { border-color: var(--color-primario); }
+  .opcion-rol:hover,
+  .opcion-rol:focus-visible { border-color: var(--color-primario); outline: none; box-shadow: 0 0 0 3px var(--color-primario-claro); }
 
   .opcion-rol .icono {
     width: 44px;
@@ -216,5 +460,10 @@
   @media (max-width: 480px) {
     .contenedor { padding: 16px 12px 48px; }
     .card { padding: 16px; }
+    .acciones-form .boton { flex: 1 1 100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; scroll-behavior: auto !important; }
   }
 </style>
